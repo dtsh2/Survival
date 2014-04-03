@@ -255,178 +255,6 @@ outGhanaSiler<-bugs(data=win.data,inits=inits,parameters.to.save=params,
           n.iter=ni,debug=T,DIC=T,working.directory=getwd())
 
 #############
-## ploting
-######################################
-outGhanaE$DIC
-a=outGhanaE$mean$a
-a2=outGhanaE$mean$a2
-
-plot(dat$Age,a*exp(-a2*dat$Age),ylab="",xlab="Age",type="l",ylim=c(0,300))
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outGhanaE$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outGhanaE$sims.list$a*exp(-outGhanaE$sims.list$a2*dat$Age[i])
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey")
-points(0:13,UPB,type="l",col="grey") # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-outGhanaSen$DIC
-a=outGhanaSen$mean$a
-a2=outGhanaSen$mean$a2
-b1=outGhanaSen$mean$b1
-b3=outGhanaSen$mean$b3
-
-lines(dat$Age,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age))),lty=2)
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outGhanaSen$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outGhanaSen$sims.list$a*exp(-outGhanaSen$sims.list$a2*dat$Age[i])*exp((-outGhanaSen$sims.list$a3/outGhanaSen$sims.list$b3)*(1-exp(outGhanaSen$sims.list$b3*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey",lty=2)
-points(0:13,UPB,type="l",col="grey",lty=2) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-outGhanaMat$DIC
-a=outGhanaMat$mean$a
-a1=outGhanaMat$mean$a1
-a2=outGhanaMat$mean$a2
-b1=outGhanaMat$mean$b1
-
-lines(dat$Age,a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=3)
-predictions<-array(dim=c(length(dat$Age),length(outGhanaMat$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outGhanaMat$sims.list$a*exp(-outGhanaMat$sims.list$a2*dat$Age[i])*exp((-outGhanaMat$sims.list$a1/outGhanaMat$sims.list$b1)*(1-exp(-outGhanaMat$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey",lty=3)
-points(0:13,UPB,type="l",col="grey",lty=3) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-outGhanaSiler$DIC
-
-a=outGhanaSiler$mean$a
-a1=outGhanaSiler$mean$a1
-a2=outGhanaSiler$mean$a2
-a3=outGhanaSiler$mean$a3
-b1=outGhanaSiler$mean$b1
-b3=outGhanaSiler$mean$b3
-
-lines(dat$Age,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=4)
-predictions<-array(dim=c(length(dat$Age),length(outGhanaSiler$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outGhanaSiler$sims.list$a*exp(-outGhanaSiler$sims.list$a2*dat$Age[i])*exp((-outGhanaSiler$sims.list$a3/outGhanaSiler$sims.list$b3)*(1-exp(outGhanaSiler$sims.list$b3*dat$Age[i])))*exp((-outGhanaSiler$sims.list$a1/outGhanaSiler$sims.list$b1)*(1-exp(-outGhanaSiler$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey",lty=4)
-points(0:13,UPB,type="l",col="grey",lty=4) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
-       lty=1:4,bty="n")
-
-points(dat$Age,Ghana,bg="black",pch=21)
-
-min=min(outGhanaE$DIC,outGhanaMat$DIC,outGhanaSen$DIC,outGhanaSiler$DIC)
-barplot(c(outGhanaE$DIC-min,outGhanaMat$DIC-min,outGhanaSen$DIC-min,outGhanaSiler$DIC-min),
-        names.arg=c("Constant","Maturation","Senescence","Both"))
-
-par(mfrow=c(3,2))
-hist(outGhanaSiler$sims.list$a, main="a",xlab="",col="grey")
-abline(v=outGhanaSiler$mean$a,col="red")
-hist(outGhanaSiler$sims.list$a1, main="a1",xlab="",col="grey")
-abline(v=outGhanaSiler$mean$a1,col="red")
-hist(outGhanaSiler$sims.list$a2, main="a2",xlab="",col="grey")
-abline(v=outGhanaSiler$mean$a2,col="red")
-hist(outGhanaSiler$sims.list$a3, main="a3",xlab="",col="grey")
-abline(v=outGhanaSiler$mean$a3,col="red")
-hist(outGhanaSiler$sims.list$b1, main="b1",xlab="",col="grey")
-abline(v=outGhanaSiler$mean$b1,col="red")
-hist(outGhanaSiler$sims.list$b3, main="b3",xlab="",col="grey")
-abline(v=outGhanaSiler$mean$b3,col="red")
-
-###########################################
-# plotting posterior vs priors
-plot(density(outGhanaSiler$sims.list$a), main="a",xlab="",xlim=c(0,1000))
-polygon(density(outGhanaSiler$sims.list$a), col =  "#00000010", border = NA)
-lines(density(runif(1:1000,min=0,max=1000)))
-polygon(density(runif(1:1000,min=0,max=1000)), col =  "#00000010", border = NA)
-
-plot(density(outGhanaSiler$sims.list$a1), main="a1",xlab="")
-polygon(density(outGhanaSiler$sims.list$a1), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))))
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
-
-plot(density(outGhanaSiler$sims.list$a2), main="a2",xlab="")
-polygon(density(outGhanaSiler$sims.list$a2), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))))
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
-
-plot(density(outGhanaSiler$sims.list$a3), main="a3",xlab="")
-polygon(density(outGhanaSiler$sims.list$a3), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))))
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
-
-plot(density(outGhanaSiler$sims.list$b1), main="b1",xlab="")
-polygon(density(outGhanaSiler$sims.list$b1), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))))
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
-
-plot(density(outGhanaSiler$sims.list$b3), main="b3",xlab="")
-polygon(density(outGhanaSiler$sims.list$b3), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))))
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
-
-########################
-
-## calculate survival lx-1/lx
-## ploting
-######################################
-
-a=outGhanaE$mean$a
-a2=outGhanaE$mean$a2
-SConst<-a*exp(-a2*dat$Age)
-
-outGhanaSen$DIC
-a=outGhanaSen$mean$a
-a2=outGhanaSen$mean$a2
-b1=outGhanaSen$mean$b1
-b3=outGhanaSen$mean$b3
-SSen<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))
-
-outGhanaMat$DIC
-a=outGhanaMat$mean$a
-a1=outGhanaMat$mean$a1
-a2=outGhanaMat$mean$a2
-b1=outGhanaMat$mean$b1
-SMat<-a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-
-a=outGhanaSiler$mean$a
-a1=outGhanaSiler$mean$a1
-a2=outGhanaSiler$mean$a2
-a3=outGhanaSiler$mean$a3
-b1=outGhanaSiler$mean$b1
-b3=outGhanaSiler$mean$b3
-SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-############################
-pConst=(SConst[1:13+1])/(SConst[1:13])
-pSen=(SSen[1:13+1])/(SSen[1:13])
-pMat=(SMat[1:13+1])/(SMat[1:13])
-pSiler=(SSiler[1:13+1])/(SSiler[1:13])
-par(mfrow=c(1,1))
-plot(0:12,pConst,ylim=c(0,1),type="l",xlab="Age",ylab="Survival")
-lines(0:12,pSen,lty=2)
-lines(0:12,pMat,lty=3)
-lines(0:12,pSiler,lty=4)
-legend("bottomright",legend=c("Constant","Maturation","Senescence","Both"),
-       lty=1:4,bty="n")
-
 ##################
 ## try SaoTome
 
@@ -731,139 +559,7 @@ mtext(c("Both","Constant","Maturation","Senescence"),side=1,at=1:4)
 barplot(aics$aic.weights,xaxt="n",xlab="model",ylab="AIC weights",width=0.8,main="SaoTome")
 mtext(c("Both","Constant","Maturation","Senescence"),side=1,at=0.5:3.5)
 
-######################################
-outSaoTomeE$DIC
-a=outSaoTomeE$mean$a
-a2=outSaoTomeE$mean$a2
-
-plot(0:13,a*exp(-a2*dat$Age),ylab="",xlab="Age",type="l",ylim=c(0,40))
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outSaoTomeE$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outSaoTomeE$sims.list$a*exp(-outSaoTomeE$sims.list$a2*dat$Age[i])
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey")
-points(0:13,UPB,type="l",col="grey") # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-outSaoTomeSen$DIC
-a=outSaoTomeSen$mean$a
-a2=outSaoTomeSen$mean$a2
-b1=outSaoTomeSen$mean$b1
-b3=outSaoTomeSen$mean$b3
-
-lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age))),lty=2)
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outSaoTomeSen$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outSaoTomeSen$sims.list$a*exp(-outSaoTomeSen$sims.list$a2*dat$Age[i])*exp((-outSaoTomeSen$sims.list$a3/outSaoTomeSen$sims.list$b3)*(1-exp(outSaoTomeSen$sims.list$b3*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey",lty=2)
-points(0:13,UPB,type="l",col="grey",lty=2) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-outSaoTomeMat$DIC
-a=outSaoTomeMat$mean$a
-a1=outSaoTomeMat$mean$a1
-a2=outSaoTomeMat$mean$a2
-b1=outSaoTomeMat$mean$b1
-
-lines(0:13,a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=3)
-predictions<-array(dim=c(length(dat$Age),length(outSaoTomeMat$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outSaoTomeMat$sims.list$a*exp(-outSaoTomeMat$sims.list$a2*dat$Age[i])*exp((-outSaoTomeMat$sims.list$a1/outSaoTomeMat$sims.list$b1)*(1-exp(-outSaoTomeMat$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey",lty=3)
-points(0:13,UPB,type="l",col="grey",lty=3) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-outSaoTomeSiler$DIC
-
-a=outSaoTomeSiler$mean$a
-a1=outSaoTomeSiler$mean$a1
-a2=outSaoTomeSiler$mean$a2
-a3=outSaoTomeSiler$mean$a3
-b1=outSaoTomeSiler$mean$b1
-b3=outSaoTomeSiler$mean$b3
-
-lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=4)
-predictions<-array(dim=c(length(dat$Age),length(outSaoTomeSiler$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outSaoTomeSiler$sims.list$a*exp(-outSaoTomeSiler$sims.list$a2*dat$Age[i])*exp((-outSaoTomeSiler$sims.list$a3/outSaoTomeSiler$sims.list$b3)*(1-exp(outSaoTomeSiler$sims.list$b3*dat$Age[i])))*exp((-outSaoTomeSiler$sims.list$a1/outSaoTomeSiler$sims.list$b1)*(1-exp(-outSaoTomeSiler$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey",lty=4)
-points(0:13,UPB,type="l",col="grey",lty=4) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
-       lty=1:4,bty="n")
-
-points(dat$Age,SaoTome,bg="black",pch=21)
-
-min=min(outSaoTomeE$DIC,outSaoTomeMat$DIC,outSaoTomeSen$DIC,outSaoTomeSiler$DIC)
-barplot(c(outSaoTomeE$DIC-min,outSaoTomeMat$DIC-min,outSaoTomeSen$DIC-min,outSaoTomeSiler$DIC-min),
-        names.arg=c("Constant","Maturation","Senescence","Both"))
-
-par(mfrow=c(3,2))
-hist(outSaoTomeSiler$sims.list$a, main="a",xlab="",col="grey")
-abline(v=outSaoTomeSiler$mean$a,col="red")
-hist(outSaoTomeSiler$sims.list$a1, main="a1",xlab="",col="grey")
-abline(v=outSaoTomeSiler$mean$a1,col="red")
-hist(outSaoTomeSiler$sims.list$a2, main="a2",xlab="",col="grey")
-abline(v=outSaoTomeSiler$mean$a2,col="red")
-hist(outSaoTomeSiler$sims.list$a3, main="a3",xlab="",col="grey")
-abline(v=outSaoTomeSiler$mean$a3,col="red")
-hist(outSaoTomeSiler$sims.list$b1, main="b1",xlab="",col="grey")
-abline(v=outSaoTomeSiler$mean$b1,col="red")
-hist(outSaoTomeSiler$sims.list$b3, main="b3",xlab="",col="grey")
-abline(v=outSaoTomeSiler$mean$b3,col="red")
-###############################################################################
-## calculate survival lx-1/lx
-## ploting
-######################################
-
-a=outSaoTomeE$mean$a
-a2=outSaoTomeE$mean$a2
-SConst<-a*exp(-a2*dat$Age)
-
-outSaoTomeSen$DIC
-a=outSaoTomeSen$mean$a
-a2=outSaoTomeSen$mean$a2
-b1=outSaoTomeSen$mean$b1
-b3=outSaoTomeSen$mean$b3
-SSen<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))
-
-outSaoTomeMat$DIC
-a=outSaoTomeMat$mean$a
-a1=outSaoTomeMat$mean$a1
-a2=outSaoTomeMat$mean$a2
-b1=outSaoTomeMat$mean$b1
-SMat<-a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-
-a=outSaoTomeSiler$mean$a
-a1=outSaoTomeSiler$mean$a1
-a2=outSaoTomeSiler$mean$a2
-a3=outSaoTomeSiler$mean$a3
-b1=outSaoTomeSiler$mean$b1
-b3=outSaoTomeSiler$mean$b3
-SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-############################
-pConst=(SConst[1:13+1])/(SConst[1:13])
-pSen=(SSen[1:13+1])/(SSen[1:13])
-pMat=(SMat[1:13+1])/(SMat[1:13])
-pSiler=(SSiler[1:13+1])/(SSiler[1:13])
-plot(0:12,pConst,ylim=c(0,1),type="l",xlab="Age",ylab="Survival")
-lines(0:12,pSen,lty=2)
-lines(0:12,pMat,lty=3)
-lines(0:12,pSiler,lty=4)
+###################
 ######################################
 ## Principe
 
@@ -1156,139 +852,6 @@ mtext(c("Both","Constant","Maturation","Senescence"),side=1,at=1:4)
 barplot(aics$aic.weights,xaxt="n",xlab="model",ylab="AIC weights",width=0.8,main="Principe")
 mtext(c("Both","Constant","Maturation","Senescence"),side=1,at=0.5:3.5)
 
-######################################
-outPrincipeE$DIC
-a=outPrincipeE$mean$a
-a2=outPrincipeE$mean$a2
-
-plot(0:13,a*exp(-a2*dat$Age),ylab="",xlab="Age",type="l",ylim=c(0,20))
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outPrincipeE$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outPrincipeE$sims.list$a*exp(-outPrincipeE$sims.list$a2*dat$Age[i])
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey")
-points(0:13,UPB,type="l",col="grey") # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-outPrincipeSen$DIC
-a=outPrincipeSen$mean$a
-a2=outPrincipeSen$mean$a2
-b1=outPrincipeSen$mean$b1
-b3=outPrincipeSen$mean$b3
-
-lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age))),lty=2)
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outPrincipeSen$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outPrincipeSen$sims.list$a*exp(-outPrincipeSen$sims.list$a2*dat$Age[i])*exp((-outPrincipeSen$sims.list$a3/outPrincipeSen$sims.list$b3)*(1-exp(outPrincipeSen$sims.list$b3*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey",lty=2)
-points(0:13,UPB,type="l",col="grey",lty=2) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-outPrincipeMat$DIC
-a=outPrincipeMat$mean$a
-a1=outPrincipeMat$mean$a1
-a2=outPrincipeMat$mean$a2
-b1=outPrincipeMat$mean$b1
-
-lines(0:13,a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=3)
-predictions<-array(dim=c(length(dat$Age),length(outPrincipeMat$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outPrincipeMat$sims.list$a*exp(-outPrincipeMat$sims.list$a2*dat$Age[i])*exp((-outPrincipeMat$sims.list$a1/outPrincipeMat$sims.list$b1)*(1-exp(-outPrincipeMat$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey",lty=3)
-points(0:13,UPB,type="l",col="grey",lty=3) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-outPrincipeSiler$DIC
-
-a=outPrincipeSiler$mean$a
-a1=outPrincipeSiler$mean$a1
-a2=outPrincipeSiler$mean$a2
-a3=outPrincipeSiler$mean$a3
-b1=outPrincipeSiler$mean$b1
-b3=outPrincipeSiler$mean$b3
-
-lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=4)
-predictions<-array(dim=c(length(dat$Age),length(outPrincipeSiler$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outPrincipeSiler$sims.list$a*exp(-outPrincipeSiler$sims.list$a2*dat$Age[i])*exp((-outPrincipeSiler$sims.list$a3/outPrincipeSiler$sims.list$b3)*(1-exp(outPrincipeSiler$sims.list$b3*dat$Age[i])))*exp((-outPrincipeSiler$sims.list$a1/outPrincipeSiler$sims.list$b1)*(1-exp(-outPrincipeSiler$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey",lty=4)
-points(0:13,UPB,type="l",col="grey",lty=4) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
-       lty=1:4,bty="n")
-
-points(dat$Age,Principe,bg="black",pch=21)
-
-min=min(outPrincipeE$DIC,outPrincipeMat$DIC,outPrincipeSen$DIC,outPrincipeSiler$DIC)
-barplot(c(outPrincipeE$DIC-min,outPrincipeMat$DIC-min,outPrincipeSen$DIC-min,outPrincipeSiler$DIC-min),
-        names.arg=c("Constant","Maturation","Senescence","Both"))
-
-par(mfrow=c(3,2))
-hist(outPrincipeSiler$sims.list$a, main="a",xlab="",col="grey")
-abline(v=outPrincipeSiler$mean$a,col="red")
-hist(outPrincipeSiler$sims.list$a1, main="a1",xlab="",col="grey")
-abline(v=outPrincipeSiler$mean$a1,col="red")
-hist(outPrincipeSiler$sims.list$a2, main="a2",xlab="",col="grey")
-abline(v=outPrincipeSiler$mean$a2,col="red")
-hist(outPrincipeSiler$sims.list$a3, main="a3",xlab="",col="grey")
-abline(v=outPrincipeSiler$mean$a3,col="red")
-hist(outPrincipeSiler$sims.list$b1, main="b1",xlab="",col="grey")
-abline(v=outPrincipeSiler$mean$b1,col="red")
-hist(outPrincipeSiler$sims.list$b3, main="b3",xlab="",col="grey")
-abline(v=outPrincipeSiler$mean$b3,col="red")
-###############################################################################
-## calculate survival lx-1/lx
-## ploting
-######################################
-
-a=outPrincipeE$mean$a
-a2=outPrincipeE$mean$a2
-SConst<-a*exp(-a2*dat$Age)
-
-outPrincipeSen$DIC
-a=outPrincipeSen$mean$a
-a2=outPrincipeSen$mean$a2
-b1=outPrincipeSen$mean$b1
-b3=outPrincipeSen$mean$b3
-SSen<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))
-
-outPrincipeMat$DIC
-a=outPrincipeMat$mean$a
-a1=outPrincipeMat$mean$a1
-a2=outPrincipeMat$mean$a2
-b1=outPrincipeMat$mean$b1
-SMat<-a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-
-a=outPrincipeSiler$mean$a
-a1=outPrincipeSiler$mean$a1
-a2=outPrincipeSiler$mean$a2
-a3=outPrincipeSiler$mean$a3
-b1=outPrincipeSiler$mean$b1
-b3=outPrincipeSiler$mean$b3
-SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-############################
-pConst=(SConst[1:13+1])/(SConst[1:13])
-pSen=(SSen[1:13+1])/(SSen[1:13])
-pMat=(SMat[1:13+1])/(SMat[1:13])
-pSiler=(SSiler[1:13+1])/(SSiler[1:13])
-plot(0:12,pConst,ylim=c(0,1),type="l",xlab="Age",ylab="Survival")
-lines(0:12,pSen,lty=2)
-lines(0:12,pMat,lty=3)
-lines(0:12,pSiler,lty=4)
 ######################################
 #########################################################################################################################################
 
@@ -1584,141 +1147,6 @@ barplot(aics$aic.weights,xaxt="n",xlab="model",ylab="AIC weights",width=0.8,main
 mtext(c("Both","Constant","Maturation","Senescence"),side=1,at=0.5:3.5)
 
 ######################################
-outMorogoroE$DIC
-a=outMorogoroE$mean$a
-a2=outMorogoroE$mean$a2
-
-plot(0:13,a*exp(-a2*dat$Age),ylab="",xlab="Age",type="l",ylim=c(0,30))
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outMorogoroE$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outMorogoroE$sims.list$a*exp(-outMorogoroE$sims.list$a2*dat$Age[i])
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey")
-points(0:13,UPB,type="l",col="grey") # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-outMorogoroSen$DIC
-a=outMorogoroSen$mean$a
-a2=outMorogoroSen$mean$a2
-b1=outMorogoroSen$mean$b1
-b3=outMorogoroSen$mean$b3
-
-lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age))),lty=2)
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outMorogoroSen$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outMorogoroSen$sims.list$a*exp(-outMorogoroSen$sims.list$a2*dat$Age[i])*exp((-outMorogoroSen$sims.list$a3/outMorogoroSen$sims.list$b3)*(1-exp(outMorogoroSen$sims.list$b3*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey",lty=2)
-points(0:13,UPB,type="l",col="grey",lty=2) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-outMorogoroMat$DIC
-a=outMorogoroMat$mean$a
-a1=outMorogoroMat$mean$a1
-a2=outMorogoroMat$mean$a2
-b1=outMorogoroMat$mean$b1
-
-lines(0:13,a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=3)
-predictions<-array(dim=c(length(dat$Age),length(outMorogoroMat$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outMorogoroMat$sims.list$a*exp(-outMorogoroMat$sims.list$a2*dat$Age[i])*exp((-outMorogoroMat$sims.list$a1/outMorogoroMat$sims.list$b1)*(1-exp(-outMorogoroMat$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey",lty=3)
-points(0:13,UPB,type="l",col="grey",lty=3) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-outMorogoroSiler$DIC
-
-a=outMorogoroSiler$mean$a
-a1=outMorogoroSiler$mean$a1
-a2=outMorogoroSiler$mean$a2
-a3=outMorogoroSiler$mean$a3
-b1=outMorogoroSiler$mean$b1
-b3=outMorogoroSiler$mean$b3
-
-lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=4)
-predictions<-array(dim=c(length(dat$Age),length(outMorogoroSiler$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outMorogoroSiler$sims.list$a*exp(-outMorogoroSiler$sims.list$a2*dat$Age[i])*exp((-outMorogoroSiler$sims.list$a3/outMorogoroSiler$sims.list$b3)*(1-exp(outMorogoroSiler$sims.list$b3*dat$Age[i])))*exp((-outMorogoroSiler$sims.list$a1/outMorogoroSiler$sims.list$b1)*(1-exp(-outMorogoroSiler$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey",lty=4)
-points(0:13,UPB,type="l",col="grey",lty=4) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-        
-legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
-       lty=1:4,bty="n")
-
-points(dat$Age,Morogoro,bg="black",pch=21)
-
-min=min(outMorogoroE$DIC,outMorogoroMat$DIC,outMorogoroSen$DIC,outMorogoroSiler$DIC)
-barplot(c(outMorogoroE$DIC-min,outMorogoroMat$DIC-min,outMorogoroSen$DIC-min,outMorogoroSiler$DIC-min),
-        names.arg=c("Constant","Maturation","Senescence","Both"))
-
-par(mfrow=c(3,2))
-hist(outMorogoroSiler$sims.list$a, main="a",xlab="",col="grey")
-abline(v=outMorogoroSiler$mean$a,col="red")
-hist(outMorogoroSiler$sims.list$a1, main="a1",xlab="",col="grey")
-abline(v=outMorogoroSiler$mean$a1,col="red")
-hist(outMorogoroSiler$sims.list$a2, main="a2",xlab="",col="grey")
-abline(v=outMorogoroSiler$mean$a2,col="red")
-hist(outMorogoroSiler$sims.list$a3, main="a3",xlab="",col="grey")
-abline(v=outMorogoroSiler$mean$a3,col="red")
-hist(outMorogoroSiler$sims.list$b1, main="b1",xlab="",col="grey")
-abline(v=outMorogoroSiler$mean$b1,col="red")
-hist(outMorogoroSiler$sims.list$b3, main="b3",xlab="",col="grey")
-abline(v=outMorogoroSiler$mean$b3,col="red")
-
-###############################################################################
-## calculate survival lx-1/lx
-## ploting
-######################################
-
-a=outMorogoroE$mean$a
-a2=outMorogoroE$mean$a2
-SConst<-a*exp(-a2*dat$Age)
-
-outMorogoroSen$DIC
-a=outMorogoroSen$mean$a
-a2=outMorogoroSen$mean$a2
-b1=outMorogoroSen$mean$b1
-b3=outMorogoroSen$mean$b3
-SSen<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))
-
-outMorogoroMat$DIC
-a=outMorogoroMat$mean$a
-a1=outMorogoroMat$mean$a1
-a2=outMorogoroMat$mean$a2
-b1=outMorogoroMat$mean$b1
-SMat<-a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-
-a=outMorogoroSiler$mean$a
-a1=outMorogoroSiler$mean$a1
-a2=outMorogoroSiler$mean$a2
-a3=outMorogoroSiler$mean$a3
-b1=outMorogoroSiler$mean$b1
-b3=outMorogoroSiler$mean$b3
-SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-############################
-pConst=(SConst[1:13+1])/(SConst[1:13])
-pSen=(SSen[1:13+1])/(SSen[1:13])
-pMat=(SMat[1:13+1])/(SMat[1:13])
-pSiler=(SSiler[1:13+1])/(SSiler[1:13])
-plot(0:12,pConst,ylim=c(0,1),type="l",xlab="Age",ylab="Survival")
-lines(0:12,pSen,lty=2)
-lines(0:12,pMat,lty=3)
-lines(0:12,pSiler,lty=4)
-######################################
-
 ###############################################################################
 
 
@@ -2005,142 +1433,6 @@ mtext(c("Both","Constant","Maturation","Senescence"),side=1,at=1:4)
 ## NB can use barplot
 barplot(aics$aic.weights,xaxt="n",xlab="model",ylab="AIC weights",width=0.8,main="DarEsSalaam")
 mtext(c("Both","Constant","Maturation","Senescence"),side=1,at=0.5:3.5)
-
-######################################
-outDarEsSalaamE$DIC
-a=outDarEsSalaamE$mean$a
-a2=outDarEsSalaamE$mean$a2
-
-plot(0:13,a*exp(-a2*dat$Age),ylab="",xlab="Age",type="l",ylim=c(0,15))
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outDarEsSalaamE$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outDarEsSalaamE$sims.list$a*exp(-outDarEsSalaamE$sims.list$a2*dat$Age[i])
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey")
-points(0:13,UPB,type="l",col="grey") # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-outDarEsSalaamSen$DIC
-a=outDarEsSalaamSen$mean$a
-a2=outDarEsSalaamSen$mean$a2
-b1=outDarEsSalaamSen$mean$b1
-b3=outDarEsSalaamSen$mean$b3
-
-lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age))),lty=2)
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outDarEsSalaamSen$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outDarEsSalaamSen$sims.list$a*exp(-outDarEsSalaamSen$sims.list$a2*dat$Age[i])*exp((-outDarEsSalaamSen$sims.list$a3/outDarEsSalaamSen$sims.list$b3)*(1-exp(outDarEsSalaamSen$sims.list$b3*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey",lty=2)
-points(0:13,UPB,type="l",col="grey",lty=2) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-outDarEsSalaamMat$DIC
-a=outDarEsSalaamMat$mean$a
-a1=outDarEsSalaamMat$mean$a1
-a2=outDarEsSalaamMat$mean$a2
-b1=outDarEsSalaamMat$mean$b1
-
-lines(0:13,a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=3)
-predictions<-array(dim=c(length(dat$Age),length(outDarEsSalaamMat$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outDarEsSalaamMat$sims.list$a*exp(-outDarEsSalaamMat$sims.list$a2*dat$Age[i])*exp((-outDarEsSalaamMat$sims.list$a1/outDarEsSalaamMat$sims.list$b1)*(1-exp(-outDarEsSalaamMat$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey",lty=3)
-points(0:13,UPB,type="l",col="grey",lty=3) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-outDarEsSalaamSiler$DIC
-
-a=outDarEsSalaamSiler$mean$a
-a1=outDarEsSalaamSiler$mean$a1
-a2=outDarEsSalaamSiler$mean$a2
-a3=outDarEsSalaamSiler$mean$a3
-b1=outDarEsSalaamSiler$mean$b1
-b3=outDarEsSalaamSiler$mean$b3
-
-lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=4)
-predictions<-array(dim=c(length(dat$Age),length(outDarEsSalaamSiler$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outDarEsSalaamSiler$sims.list$a*exp(-outDarEsSalaamSiler$sims.list$a2*dat$Age[i])*exp((-outDarEsSalaamSiler$sims.list$a3/outDarEsSalaamSiler$sims.list$b3)*(1-exp(outDarEsSalaamSiler$sims.list$b3*dat$Age[i])))*exp((-outDarEsSalaamSiler$sims.list$a1/outDarEsSalaamSiler$sims.list$b1)*(1-exp(-outDarEsSalaamSiler$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey",lty=4)
-points(0:13,UPB,type="l",col="grey",lty=4) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
-       lty=1:4,bty="n")
-
-points(dat$Age,DarEsSalaam,bg="black",pch=21)
-
-min=min(outDarEsSalaamE$DIC,outDarEsSalaamMat$DIC,outDarEsSalaamSen$DIC,outDarEsSalaamSiler$DIC)
-barplot(c(outDarEsSalaamE$DIC-min,outDarEsSalaamMat$DIC-min,outDarEsSalaamSen$DIC-min,outDarEsSalaamSiler$DIC-min),
-        names.arg=c("Constant","Maturation","Senescence","Both"))
-
-par(mfrow=c(3,2))
-hist(outDarEsSalaamSiler$sims.list$a, main="a",xlab="",col="grey")
-abline(v=outDarEsSalaamSiler$mean$a,col="red")
-hist(outDarEsSalaamSiler$sims.list$a1, main="a1",xlab="",col="grey")
-abline(v=outDarEsSalaamSiler$mean$a1,col="red")
-hist(outDarEsSalaamSiler$sims.list$a2, main="a2",xlab="",col="grey")
-abline(v=outDarEsSalaamSiler$mean$a2,col="red")
-hist(outDarEsSalaamSiler$sims.list$a3, main="a3",xlab="",col="grey")
-abline(v=outDarEsSalaamSiler$mean$a3,col="red")
-hist(outDarEsSalaamSiler$sims.list$b1, main="b1",xlab="",col="grey")
-abline(v=outDarEsSalaamSiler$mean$b1,col="red")
-hist(outDarEsSalaamSiler$sims.list$b3, main="b3",xlab="",col="grey")
-abline(v=outDarEsSalaamSiler$mean$b3,col="red")
-
-###############################################################################
-## calculate survival lx-1/lx
-## ploting
-######################################
-
-a=outDarEsSalaamE$mean$a
-a2=outDarEsSalaamE$mean$a2
-SConst<-a*exp(-a2*dat$Age)
-
-outDarEsSalaamSen$DIC
-a=outDarEsSalaamSen$mean$a
-a2=outDarEsSalaamSen$mean$a2
-b1=outDarEsSalaamSen$mean$b1
-b3=outDarEsSalaamSen$mean$b3
-SSen<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))
-
-outDarEsSalaamMat$DIC
-a=outDarEsSalaamMat$mean$a
-a1=outDarEsSalaamMat$mean$a1
-a2=outDarEsSalaamMat$mean$a2
-b1=outDarEsSalaamMat$mean$b1
-SMat<-a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-
-a=outDarEsSalaamSiler$mean$a
-a1=outDarEsSalaamSiler$mean$a1
-a2=outDarEsSalaamSiler$mean$a2
-a3=outDarEsSalaamSiler$mean$a3
-b1=outDarEsSalaamSiler$mean$b1
-b3=outDarEsSalaamSiler$mean$b3
-SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-############################
-pConst=(SConst[1:13+1])/(SConst[1:13])
-pSen=(SSen[1:13+1])/(SSen[1:13])
-pMat=(SMat[1:13+1])/(SMat[1:13])
-pSiler=(SSiler[1:13+1])/(SSiler[1:13])
-plot(0:12,pConst,ylim=c(0,1),type="l",xlab="Age",ylab="Survival")
-lines(0:12,pSen,lty=2)
-lines(0:12,pMat,lty=3)
-lines(0:12,pSiler,lty=4)
-######################################
 
 ##########################################################
 
@@ -2436,11 +1728,564 @@ barplot(aics$aic.weights,xaxt="n",xlab="model",ylab="AIC weights",width=0.8,main
 mtext(c("Both","Constant","Maturation","Senescence"),side=1,at=0.5:3.5)
 
 ######################################
+## ploting
+######################################
+outGhanaE$DIC
+a=outGhanaE$mean$a
+a2=outGhanaE$mean$a2
+
+plot(dat$Age,a*exp(-a2*dat$Age),ylab="",xlab="Age",type="l",ylim=c(0,300))
+## plot CI
+predictions<-array(dim=c(length(dat$Age),length(outGhanaE$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outGhanaE$sims.list$a*exp(-outGhanaE$sims.list$a2*dat$Age[i])
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey")
+points(0:13,UPB,type="l",col="grey") # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+outGhanaSen$DIC
+a=outGhanaSen$mean$a
+a2=outGhanaSen$mean$a2
+a3=outGhanaSen$mean$a3
+b3=outGhanaSen$mean$b3
+
+lines(dat$Age,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age))),lty=2)
+## plot CI
+predictions<-array(dim=c(length(dat$Age),length(outGhanaSen$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outGhanaSen$sims.list$a*exp(-outGhanaSen$sims.list$a2*dat$Age[i])*exp((-outGhanaSen$sims.list$a3/outGhanaSen$sims.list$b3)*(1-exp(outGhanaSen$sims.list$b3*dat$Age[i])))
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey",lty=2)
+points(0:13,UPB,type="l",col="grey",lty=2) # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+outGhanaMat$DIC
+a=outGhanaMat$mean$a
+a1=outGhanaMat$mean$a1
+a2=outGhanaMat$mean$a2
+b1=outGhanaMat$mean$b1
+
+lines(dat$Age,a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=3)
+predictions<-array(dim=c(length(dat$Age),length(outGhanaMat$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outGhanaMat$sims.list$a*exp(-outGhanaMat$sims.list$a2*dat$Age[i])*exp((-outGhanaMat$sims.list$a1/outGhanaMat$sims.list$b1)*(1-exp(-outGhanaMat$sims.list$b1*dat$Age[i])))
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey",lty=3)
+points(0:13,UPB,type="l",col="grey",lty=3) # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+outGhanaSiler$DIC
+
+a=outGhanaSiler$mean$a
+a1=outGhanaSiler$mean$a1
+a2=outGhanaSiler$mean$a2
+a3=outGhanaSiler$mean$a3
+b1=outGhanaSiler$mean$b1
+b3=outGhanaSiler$mean$b3
+
+lines(dat$Age,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=4)
+predictions<-array(dim=c(length(dat$Age),length(outGhanaSiler$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outGhanaSiler$sims.list$a*exp(-outGhanaSiler$sims.list$a2*dat$Age[i])*exp((-outGhanaSiler$sims.list$a3/outGhanaSiler$sims.list$b3)*(1-exp(outGhanaSiler$sims.list$b3*dat$Age[i])))*exp((-outGhanaSiler$sims.list$a1/outGhanaSiler$sims.list$b1)*(1-exp(-outGhanaSiler$sims.list$b1*dat$Age[i])))
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey",lty=4)
+points(0:13,UPB,type="l",col="grey",lty=4) # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
+       lty=1:4,bty="n")
+
+points(dat$Age,dat$Ghana,bg="black",pch=21)
+
+#### end figure of fits and data
+
+min=min(outGhanaE$DIC,outGhanaMat$DIC,outGhanaSen$DIC,outGhanaSiler$DIC)
+barplot(c(outGhanaE$DIC-min,outGhanaMat$DIC-min,outGhanaSen$DIC-min,outGhanaSiler$DIC-min),
+        names.arg=c("Constant","Maturation","Senescence","Both"))
+
+### end DIC
+## param est
+
+par(mfrow=c(3,2))
+hist(outGhanaSiler$sims.list$a, main="a",xlab="",col="grey")
+abline(v=outGhanaSiler$mean$a,col="red")
+hist(outGhanaSiler$sims.list$a1, main="a1",xlab="",col="grey")
+abline(v=outGhanaSiler$mean$a1,col="red")
+hist(outGhanaSiler$sims.list$a2, main="a2",xlab="",col="grey")
+abline(v=outGhanaSiler$mean$a2,col="red")
+hist(outGhanaSiler$sims.list$a3, main="a3",xlab="",col="grey")
+abline(v=outGhanaSiler$mean$a3,col="red")
+hist(outGhanaSiler$sims.list$b1, main="b1",xlab="",col="grey")
+abline(v=outGhanaSiler$mean$b1,col="red")
+hist(outGhanaSiler$sims.list$b3, main="b3",xlab="",col="grey")
+abline(v=outGhanaSiler$mean$b3,col="red")
+
+###########################################
+# plotting posterior vs priors
+plot(density(outGhanaSiler$sims.list$a), main="a",xlab="",xlim=c(0,1000))
+polygon(density(outGhanaSiler$sims.list$a), col =  "#00000010", border = NA)
+lines(density(runif(1:1000,min=0,max=1000)))
+polygon(density(runif(1:1000,min=0,max=1000)), col =  "#00000010", border = NA)
+
+plot(density(outGhanaSiler$sims.list$a1), main="a1",xlab="")
+polygon(density(outGhanaSiler$sims.list$a1), col =  "#00000010", border = NA)
+lines(density((rnorm(1:1000,mean=0,sd=10))))
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
+
+plot(density(outGhanaSiler$sims.list$a2), main="a2",xlab="")
+polygon(density(outGhanaSiler$sims.list$a2), col =  "#00000010", border = NA)
+lines(density((rnorm(1:1000,mean=0,sd=10))))
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
+
+plot(density(outGhanaSiler$sims.list$a3), main="a3",xlab="")
+polygon(density(outGhanaSiler$sims.list$a3), col =  "#00000010", border = NA)
+lines(density((rnorm(1:1000,mean=0,sd=10))))
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
+
+plot(density(outGhanaSiler$sims.list$b1), main="b1",xlab="")
+polygon(density(outGhanaSiler$sims.list$b1), col =  "#00000010", border = NA)
+lines(density((rnorm(1:1000,mean=0,sd=10))))
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
+
+plot(density(outGhanaSiler$sims.list$b3), main="b3",xlab="")
+polygon(density(outGhanaSiler$sims.list$b3), col =  "#00000010", border = NA)
+lines(density((rnorm(1:1000,mean=0,sd=10))))
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
+
+########################
+par(mfrow=c(1,1))
+######################################
+outSaoTomeE$DIC
+a=outSaoTomeE$mean$a
+a2=outSaoTomeE$mean$a2
+
+plot(0:13,a*exp(-a2*dat$Age),ylab="",xlab="Age",type="l",ylim=c(0,40))
+## plot CI
+predictions<-array(dim=c(length(dat$Age),length(outSaoTomeE$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outSaoTomeE$sims.list$a*exp(-outSaoTomeE$sims.list$a2*dat$Age[i])
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey")
+points(0:13,UPB,type="l",col="grey") # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+outSaoTomeSen$DIC
+a=outSaoTomeSen$mean$a
+a2=outSaoTomeSen$mean$a2
+a3=outSaoTomeSen$mean$a3
+b3=outSaoTomeSen$mean$b3
+
+lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age))),lty=2)
+## plot CI
+predictions<-array(dim=c(length(dat$Age),length(outSaoTomeSen$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outSaoTomeSen$sims.list$a*exp(-outSaoTomeSen$sims.list$a2*dat$Age[i])*exp((-outSaoTomeSen$sims.list$a3/outSaoTomeSen$sims.list$b3)*(1-exp(outSaoTomeSen$sims.list$b3*dat$Age[i])))
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey",lty=2)
+points(0:13,UPB,type="l",col="grey",lty=2) # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+outSaoTomeMat$DIC
+a=outSaoTomeMat$mean$a
+a1=outSaoTomeMat$mean$a1
+a2=outSaoTomeMat$mean$a2
+b1=outSaoTomeMat$mean$b1
+
+lines(0:13,a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=3)
+predictions<-array(dim=c(length(dat$Age),length(outSaoTomeMat$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outSaoTomeMat$sims.list$a*exp(-outSaoTomeMat$sims.list$a2*dat$Age[i])*exp((-outSaoTomeMat$sims.list$a1/outSaoTomeMat$sims.list$b1)*(1-exp(-outSaoTomeMat$sims.list$b1*dat$Age[i])))
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey",lty=3)
+points(0:13,UPB,type="l",col="grey",lty=3) # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+outSaoTomeSiler$DIC
+
+a=outSaoTomeSiler$mean$a
+a1=outSaoTomeSiler$mean$a1
+a2=outSaoTomeSiler$mean$a2
+a3=outSaoTomeSiler$mean$a3
+b1=outSaoTomeSiler$mean$b1
+b3=outSaoTomeSiler$mean$b3
+
+lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=4)
+predictions<-array(dim=c(length(dat$Age),length(outSaoTomeSiler$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outSaoTomeSiler$sims.list$a*exp(-outSaoTomeSiler$sims.list$a2*dat$Age[i])*exp((-outSaoTomeSiler$sims.list$a3/outSaoTomeSiler$sims.list$b3)*(1-exp(outSaoTomeSiler$sims.list$b3*dat$Age[i])))*exp((-outSaoTomeSiler$sims.list$a1/outSaoTomeSiler$sims.list$b1)*(1-exp(-outSaoTomeSiler$sims.list$b1*dat$Age[i])))
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey",lty=4)
+points(0:13,UPB,type="l",col="grey",lty=4) # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
+       lty=1:4,bty="n")
+
+points(dat$Age,dat$SaoTome,bg="black",pch=21)
+
+min=min(outSaoTomeE$DIC,outSaoTomeMat$DIC,outSaoTomeSen$DIC,outSaoTomeSiler$DIC)
+barplot(c(outSaoTomeE$DIC-min,outSaoTomeMat$DIC-min,outSaoTomeSen$DIC-min,outSaoTomeSiler$DIC-min),
+        names.arg=c("Constant","Maturation","Senescence","Both"))
+
+par(mfrow=c(3,2))
+hist(outSaoTomeSiler$sims.list$a, main="a",xlab="",col="grey")
+abline(v=outSaoTomeSiler$mean$a,col="red")
+hist(outSaoTomeSiler$sims.list$a1, main="a1",xlab="",col="grey")
+abline(v=outSaoTomeSiler$mean$a1,col="red")
+hist(outSaoTomeSiler$sims.list$a2, main="a2",xlab="",col="grey")
+abline(v=outSaoTomeSiler$mean$a2,col="red")
+hist(outSaoTomeSiler$sims.list$a3, main="a3",xlab="",col="grey")
+abline(v=outSaoTomeSiler$mean$a3,col="red")
+hist(outSaoTomeSiler$sims.list$b1, main="b1",xlab="",col="grey")
+abline(v=outSaoTomeSiler$mean$b1,col="red")
+hist(outSaoTomeSiler$sims.list$b3, main="b3",xlab="",col="grey")
+abline(v=outSaoTomeSiler$mean$b3,col="red")
+###############################################################################
+###########################################
+# plotting posterior vs priors
+plot(density(outSaoTomeSiler$sims.list$a), main="a",xlab="",xlim=c(0,1000))
+polygon(density(outSaoTomeSiler$sims.list$a), col =  "#00000010", border = NA)
+lines(density(runif(1:1000,min=0,max=1000)))
+polygon(density(runif(1:1000,min=0,max=1000)), col =  "#00000010", border = NA)
+
+plot(density(outSaoTomeSiler$sims.list$a1), main="a1",xlab="")
+polygon(density(outSaoTomeSiler$sims.list$a1), col =  "#00000010", border = NA)
+lines(density((rnorm(1:1000,mean=0,sd=10))))
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
+
+plot(density(outSaoTomeSiler$sims.list$a2), main="a2",xlab="")
+polygon(density(outSaoTomeSiler$sims.list$a2), col =  "#00000010", border = NA)
+lines(density((rnorm(1:1000,mean=0,sd=10))))
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
+
+plot(density(outSaoTomeSiler$sims.list$a3), main="a3",xlab="")
+polygon(density(outSaoTomeSiler$sims.list$a3), col =  "#00000010", border = NA)
+lines(density((rnorm(1:1000,mean=0,sd=10))))
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
+
+plot(density(outSaoTomeSiler$sims.list$b1), main="b1",xlab="")
+polygon(density(outSaoTomeSiler$sims.list$b1), col =  "#00000010", border = NA)
+lines(density((rnorm(1:1000,mean=0,sd=10))))
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
+
+plot(density(outSaoTomeSiler$sims.list$b3), main="b3",xlab="")
+polygon(density(outSaoTomeSiler$sims.list$b3), col =  "#00000010", border = NA)
+lines(density((rnorm(1:1000,mean=0,sd=10))))
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
+###################################################################
+par(mfrow=c(1,1))
+
+outPrincipeE$DIC
+a=outPrincipeE$mean$a
+a2=outPrincipeE$mean$a2
+
+plot(0:13,a*exp(-a2*dat$Age),ylab="",xlab="Age",type="l",ylim=c(0,20))
+## plot CI
+predictions<-array(dim=c(length(dat$Age),length(outPrincipeE$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outPrincipeE$sims.list$a*exp(-outPrincipeE$sims.list$a2*dat$Age[i])
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey")
+points(0:13,UPB,type="l",col="grey") # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+outPrincipeSen$DIC
+a=outPrincipeSen$mean$a
+a2=outPrincipeSen$mean$a2
+a3=outPrincipeSen$mean$a3
+b3=outPrincipeSen$mean$b3
+
+lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age))),lty=2)
+## plot CI
+predictions<-array(dim=c(length(dat$Age),length(outPrincipeSen$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outPrincipeSen$sims.list$a*exp(-outPrincipeSen$sims.list$a2*dat$Age[i])*exp((-outPrincipeSen$sims.list$a3/outPrincipeSen$sims.list$b3)*(1-exp(outPrincipeSen$sims.list$b3*dat$Age[i])))
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey",lty=2)
+points(0:13,UPB,type="l",col="grey",lty=2) # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+outPrincipeMat$DIC
+a=outPrincipeMat$mean$a
+a1=outPrincipeMat$mean$a1
+a2=outPrincipeMat$mean$a2
+b1=outPrincipeMat$mean$b1
+
+lines(0:13,a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=3)
+predictions<-array(dim=c(length(dat$Age),length(outPrincipeMat$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outPrincipeMat$sims.list$a*exp(-outPrincipeMat$sims.list$a2*dat$Age[i])*exp((-outPrincipeMat$sims.list$a1/outPrincipeMat$sims.list$b1)*(1-exp(-outPrincipeMat$sims.list$b1*dat$Age[i])))
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey",lty=3)
+points(0:13,UPB,type="l",col="grey",lty=3) # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+outPrincipeSiler$DIC
+
+a=outPrincipeSiler$mean$a
+a1=outPrincipeSiler$mean$a1
+a2=outPrincipeSiler$mean$a2
+a3=outPrincipeSiler$mean$a3
+b1=outPrincipeSiler$mean$b1
+b3=outPrincipeSiler$mean$b3
+
+lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=4)
+predictions<-array(dim=c(length(dat$Age),length(outPrincipeSiler$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outPrincipeSiler$sims.list$a*exp(-outPrincipeSiler$sims.list$a2*dat$Age[i])*exp((-outPrincipeSiler$sims.list$a3/outPrincipeSiler$sims.list$b3)*(1-exp(outPrincipeSiler$sims.list$b3*dat$Age[i])))*exp((-outPrincipeSiler$sims.list$a1/outPrincipeSiler$sims.list$b1)*(1-exp(-outPrincipeSiler$sims.list$b1*dat$Age[i])))
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey",lty=4)
+points(0:13,UPB,type="l",col="grey",lty=4) # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
+       lty=1:4,bty="n")
+
+points(dat$Age,dat$Principe,bg="black",pch=21)
+
+min=min(outPrincipeE$DIC,outPrincipeMat$DIC,outPrincipeSen$DIC,outPrincipeSiler$DIC)
+barplot(c(outPrincipeE$DIC-min,outPrincipeMat$DIC-min,outPrincipeSen$DIC-min,outPrincipeSiler$DIC-min),
+        names.arg=c("Constant","Maturation","Senescence","Both"))
+
+par(mfrow=c(3,2))
+hist(outPrincipeSiler$sims.list$a, main="a",xlab="",col="grey")
+abline(v=outPrincipeSiler$mean$a,col="red")
+hist(outPrincipeSiler$sims.list$a1, main="a1",xlab="",col="grey")
+abline(v=outPrincipeSiler$mean$a1,col="red")
+hist(outPrincipeSiler$sims.list$a2, main="a2",xlab="",col="grey")
+abline(v=outPrincipeSiler$mean$a2,col="red")
+hist(outPrincipeSiler$sims.list$a3, main="a3",xlab="",col="grey")
+abline(v=outPrincipeSiler$mean$a3,col="red")
+hist(outPrincipeSiler$sims.list$b1, main="b1",xlab="",col="grey")
+abline(v=outPrincipeSiler$mean$b1,col="red")
+hist(outPrincipeSiler$sims.list$b3, main="b3",xlab="",col="grey")
+abline(v=outPrincipeSiler$mean$b3,col="red")
+###############################################################################
+par(mfrow=c(1,1))
+
+outMorogoroE$DIC
+a=outMorogoroE$mean$a
+a2=outMorogoroE$mean$a2
+
+plot(0:13,a*exp(-a2*dat$Age),ylab="",xlab="Age",type="l",ylim=c(0,30))
+## plot CI
+predictions<-array(dim=c(length(dat$Age),length(outMorogoroE$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outMorogoroE$sims.list$a*exp(-outMorogoroE$sims.list$a2*dat$Age[i])
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey")
+points(0:13,UPB,type="l",col="grey") # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+outMorogoroSen$DIC
+a=outMorogoroSen$mean$a
+a2=outMorogoroSen$mean$a2
+a3=outMorogoroSen$mean$a3
+b3=outMorogoroSen$mean$b3
+
+lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age))),lty=2)
+## plot CI
+predictions<-array(dim=c(length(dat$Age),length(outMorogoroSen$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outMorogoroSen$sims.list$a*exp(-outMorogoroSen$sims.list$a2*dat$Age[i])*exp((-outMorogoroSen$sims.list$a3/outMorogoroSen$sims.list$b3)*(1-exp(outMorogoroSen$sims.list$b3*dat$Age[i])))
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey",lty=2)
+points(0:13,UPB,type="l",col="grey",lty=2) # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+outMorogoroMat$DIC
+a=outMorogoroMat$mean$a
+a1=outMorogoroMat$mean$a1
+a2=outMorogoroMat$mean$a2
+b1=outMorogoroMat$mean$b1
+
+lines(0:13,a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=3)
+predictions<-array(dim=c(length(dat$Age),length(outMorogoroMat$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outMorogoroMat$sims.list$a*exp(-outMorogoroMat$sims.list$a2*dat$Age[i])*exp((-outMorogoroMat$sims.list$a1/outMorogoroMat$sims.list$b1)*(1-exp(-outMorogoroMat$sims.list$b1*dat$Age[i])))
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey",lty=3)
+points(0:13,UPB,type="l",col="grey",lty=3) # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+outMorogoroSiler$DIC
+
+a=outMorogoroSiler$mean$a
+a1=outMorogoroSiler$mean$a1
+a2=outMorogoroSiler$mean$a2
+a3=outMorogoroSiler$mean$a3
+b1=outMorogoroSiler$mean$b1
+b3=outMorogoroSiler$mean$b3
+
+lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=4)
+predictions<-array(dim=c(length(dat$Age),length(outMorogoroSiler$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outMorogoroSiler$sims.list$a*exp(-outMorogoroSiler$sims.list$a2*dat$Age[i])*exp((-outMorogoroSiler$sims.list$a3/outMorogoroSiler$sims.list$b3)*(1-exp(outMorogoroSiler$sims.list$b3*dat$Age[i])))*exp((-outMorogoroSiler$sims.list$a1/outMorogoroSiler$sims.list$b1)*(1-exp(-outMorogoroSiler$sims.list$b1*dat$Age[i])))
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey",lty=4)
+points(0:13,UPB,type="l",col="grey",lty=4) # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
+       lty=1:4,bty="n")
+
+points(dat$Age,dat$Morogoro,bg="black",pch=21)
+
+min=min(outMorogoroE$DIC,outMorogoroMat$DIC,outMorogoroSen$DIC,outMorogoroSiler$DIC)
+barplot(c(outMorogoroE$DIC-min,outMorogoroMat$DIC-min,outMorogoroSen$DIC-min,outMorogoroSiler$DIC-min),
+        names.arg=c("Constant","Maturation","Senescence","Both"))
+
+par(mfrow=c(3,2))
+hist(outMorogoroSiler$sims.list$a, main="a",xlab="",col="grey")
+abline(v=outMorogoroSiler$mean$a,col="red")
+hist(outMorogoroSiler$sims.list$a1, main="a1",xlab="",col="grey")
+abline(v=outMorogoroSiler$mean$a1,col="red")
+hist(outMorogoroSiler$sims.list$a2, main="a2",xlab="",col="grey")
+abline(v=outMorogoroSiler$mean$a2,col="red")
+hist(outMorogoroSiler$sims.list$a3, main="a3",xlab="",col="grey")
+abline(v=outMorogoroSiler$mean$a3,col="red")
+hist(outMorogoroSiler$sims.list$b1, main="b1",xlab="",col="grey")
+abline(v=outMorogoroSiler$mean$b1,col="red")
+hist(outMorogoroSiler$sims.list$b3, main="b3",xlab="",col="grey")
+abline(v=outMorogoroSiler$mean$b3,col="red")
+
+###############################################################################
+par(mfrow=c(1,1))
+
+outDarEsSalaamE$DIC
+a=outDarEsSalaamE$mean$a
+a2=outDarEsSalaamE$mean$a2
+
+plot(0:13,a*exp(-a2*dat$Age),ylab="",xlab="Age",type="l",ylim=c(0,15))
+## plot CI
+predictions<-array(dim=c(length(dat$Age),length(outDarEsSalaamE$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outDarEsSalaamE$sims.list$a*exp(-outDarEsSalaamE$sims.list$a2*dat$Age[i])
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey")
+points(0:13,UPB,type="l",col="grey") # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+outDarEsSalaamSen$DIC
+a=outDarEsSalaamSen$mean$a
+a2=outDarEsSalaamSen$mean$a2
+a3=outDarEsSalaamSen$mean$a3
+b3=outDarEsSalaamSen$mean$b3
+
+lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age))),lty=2)
+## plot CI
+predictions<-array(dim=c(length(dat$Age),length(outDarEsSalaamSen$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outDarEsSalaamSen$sims.list$a*exp(-outDarEsSalaamSen$sims.list$a2*dat$Age[i])*exp((-outDarEsSalaamSen$sims.list$a3/outDarEsSalaamSen$sims.list$b3)*(1-exp(outDarEsSalaamSen$sims.list$b3*dat$Age[i])))
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey",lty=2)
+points(0:13,UPB,type="l",col="grey",lty=2) # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+outDarEsSalaamMat$DIC
+a=outDarEsSalaamMat$mean$a
+a1=outDarEsSalaamMat$mean$a1
+a2=outDarEsSalaamMat$mean$a2
+b1=outDarEsSalaamMat$mean$b1
+
+lines(0:13,a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=3)
+predictions<-array(dim=c(length(dat$Age),length(outDarEsSalaamMat$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outDarEsSalaamMat$sims.list$a*exp(-outDarEsSalaamMat$sims.list$a2*dat$Age[i])*exp((-outDarEsSalaamMat$sims.list$a1/outDarEsSalaamMat$sims.list$b1)*(1-exp(-outDarEsSalaamMat$sims.list$b1*dat$Age[i])))
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey",lty=3)
+points(0:13,UPB,type="l",col="grey",lty=3) # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+outDarEsSalaamSiler$DIC
+
+a=outDarEsSalaamSiler$mean$a
+a1=outDarEsSalaamSiler$mean$a1
+a2=outDarEsSalaamSiler$mean$a2
+a3=outDarEsSalaamSiler$mean$a3
+b1=outDarEsSalaamSiler$mean$b1
+b3=outDarEsSalaamSiler$mean$b3
+
+lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=4)
+predictions<-array(dim=c(length(dat$Age),length(outDarEsSalaamSiler$sims.list$a)))
+for (i in 1:length(dat$Age)){
+  predictions[i,]<-outDarEsSalaamSiler$sims.list$a*exp(-outDarEsSalaamSiler$sims.list$a2*dat$Age[i])*exp((-outDarEsSalaamSiler$sims.list$a3/outDarEsSalaamSiler$sims.list$b3)*(1-exp(outDarEsSalaamSiler$sims.list$b3*dat$Age[i])))*exp((-outDarEsSalaamSiler$sims.list$a1/outDarEsSalaamSiler$sims.list$b1)*(1-exp(-outDarEsSalaamSiler$sims.list$b1*dat$Age[i])))
+}
+LPB<-apply(predictions,1,quantile,probs=0.025)
+UPB<-apply(predictions,1,quantile,probs=0.975)
+points(0:13,LPB,type="l",col="grey",lty=4)
+points(0:13,UPB,type="l",col="grey",lty=4) # check 1 or 0 start
+polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+
+legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
+       lty=1:4,bty="n")
+
+points(dat$Age,dat$DarEsSalaam,bg="black",pch=21)
+
+min=min(outDarEsSalaamE$DIC,outDarEsSalaamMat$DIC,outDarEsSalaamSen$DIC,outDarEsSalaamSiler$DIC)
+barplot(c(outDarEsSalaamE$DIC-min,outDarEsSalaamMat$DIC-min,outDarEsSalaamSen$DIC-min,outDarEsSalaamSiler$DIC-min),
+        names.arg=c("Constant","Maturation","Senescence","Both"))
+
+par(mfrow=c(3,2))
+hist(outDarEsSalaamSiler$sims.list$a, main="a",xlab="",col="grey")
+abline(v=outDarEsSalaamSiler$mean$a,col="red")
+hist(outDarEsSalaamSiler$sims.list$a1, main="a1",xlab="",col="grey")
+abline(v=outDarEsSalaamSiler$mean$a1,col="red")
+hist(outDarEsSalaamSiler$sims.list$a2, main="a2",xlab="",col="grey")
+abline(v=outDarEsSalaamSiler$mean$a2,col="red")
+hist(outDarEsSalaamSiler$sims.list$a3, main="a3",xlab="",col="grey")
+abline(v=outDarEsSalaamSiler$mean$a3,col="red")
+hist(outDarEsSalaamSiler$sims.list$b1, main="b1",xlab="",col="grey")
+abline(v=outDarEsSalaamSiler$mean$b1,col="red")
+hist(outDarEsSalaamSiler$sims.list$b3, main="b3",xlab="",col="grey")
+abline(v=outDarEsSalaamSiler$mean$b3,col="red")
+
+######################################
+par(mfrow=c(1,1))
 outBiokoE$DIC
 a=outBiokoE$mean$a
 a2=outBiokoE$mean$a2
 
-plot(0:13,a*exp(-a2*dat$Age),ylab="",xlab="Age",type="l",ylim=c(0,30))
+plot(0:13,a*exp(-a2*dat$Age),ylab="",xlab="Age",type="l",ylim=c(0,100))
 ## plot CI
 predictions<-array(dim=c(length(dat$Age),length(outBiokoE$sims.list$a)))
 for (i in 1:length(dat$Age)){
@@ -2510,7 +2355,7 @@ polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = 
 legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
        lty=1:4,bty="n")
 
-points(dat$Age,Bioko,bg="black",pch=21)
+points(dat$Age,dat$Bioko,bg="black",pch=21)
 
 min=min(outBiokoE$DIC,outBiokoMat$DIC,outBiokoSen$DIC,outBiokoSiler$DIC)
 barplot(c(outBiokoE$DIC-min,outBiokoMat$DIC-min,outBiokoSen$DIC-min,outBiokoSiler$DIC-min),
@@ -2531,6 +2376,217 @@ hist(outBiokoSiler$sims.list$b3, main="b3",xlab="",col="grey")
 abline(v=outBiokoSiler$mean$b3,col="red")
 
 ###############################################################################
+## calculate survival lx-1/lx
+## ploting
+######################################
+par(omi=c(1,1,0.5,0.5))
+par(mai=c(0.8,0.8,0.8,0.8))
+
+par(mfrow=c(2,3))
+
+#################
+a=outGhanaE$mean$a
+a2=outGhanaE$mean$a2
+SConst<-a*exp(-a2*dat$Age)
+
+outGhanaSen$DIC
+a=outGhanaSen$mean$a
+a2=outGhanaSen$mean$a2
+a3=outGhanaSen$mean$a3
+b3=outGhanaSen$mean$b3
+SSen<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))
+
+outGhanaMat$DIC
+a=outGhanaMat$mean$a
+a1=outGhanaMat$mean$a1
+a2=outGhanaMat$mean$a2
+b1=outGhanaMat$mean$b1
+SMat<-a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
+
+a=outGhanaSiler$mean$a
+a1=outGhanaSiler$mean$a1
+a2=outGhanaSiler$mean$a2
+a3=outGhanaSiler$mean$a3
+b1=outGhanaSiler$mean$b1
+b3=outGhanaSiler$mean$b3
+SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
+############################
+pConst=(SConst[1:13+1])/(SConst[1:13])
+pSen=(SSen[1:13+1])/(SSen[1:13])
+pMat=(SMat[1:13+1])/(SMat[1:13])
+pSiler=(SSiler[1:13+1])/(SSiler[1:13])
+#par(mfrow=c(1,1))
+plot(0:12,pConst,ylim=c(0,1),type="l",xlab="",ylab="",main="Ghana")
+lines(0:12,pSen,lty=2)
+lines(0:12,pMat,lty=3)
+lines(0:12,pSiler,lty=4)
+
+##
+
+mtext("Survival",side=2,outer=T)
+mtext("Age",side=1,outer=T)
+
+#legend("bottomright",legend=c("Constant","Maturation","Senescence","Both"),
+#       lty=1:4,bty="n")
+
+## calculate survival lx-1/lx
+## ploting
+######################################
+
+a=outSaoTomeE$mean$a
+a2=outSaoTomeE$mean$a2
+SConst<-a*exp(-a2*dat$Age)
+
+outSaoTomeSen$DIC
+a=outSaoTomeSen$mean$a
+a2=outSaoTomeSen$mean$a2
+b1=outSaoTomeSen$mean$b1
+b3=outSaoTomeSen$mean$b3
+SSen<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))
+
+outSaoTomeMat$DIC
+a=outSaoTomeMat$mean$a
+a1=outSaoTomeMat$mean$a1
+a2=outSaoTomeMat$mean$a2
+b1=outSaoTomeMat$mean$b1
+SMat<-a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
+
+a=outSaoTomeSiler$mean$a
+a1=outSaoTomeSiler$mean$a1
+a2=outSaoTomeSiler$mean$a2
+a3=outSaoTomeSiler$mean$a3
+b1=outSaoTomeSiler$mean$b1
+b3=outSaoTomeSiler$mean$b3
+SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
+############################
+pConst=(SConst[1:13+1])/(SConst[1:13])
+pSen=(SSen[1:13+1])/(SSen[1:13])
+pMat=(SMat[1:13+1])/(SMat[1:13])
+pSiler=(SSiler[1:13+1])/(SSiler[1:13])
+plot(0:12,pConst,ylim=c(0,1),type="l",xlab="",ylab="",main="Sao Tome")
+lines(0:12,pSen,lty=2)
+lines(0:12,pMat,lty=3)
+lines(0:12,pSiler,lty=4)
+## ploting
+######################################
+
+a=outPrincipeE$mean$a
+a2=outPrincipeE$mean$a2
+SConst<-a*exp(-a2*dat$Age)
+
+outPrincipeSen$DIC
+a=outPrincipeSen$mean$a
+a2=outPrincipeSen$mean$a2
+b1=outPrincipeSen$mean$b1
+b3=outPrincipeSen$mean$b3
+SSen<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))
+
+outPrincipeMat$DIC
+a=outPrincipeMat$mean$a
+a1=outPrincipeMat$mean$a1
+a2=outPrincipeMat$mean$a2
+b1=outPrincipeMat$mean$b1
+SMat<-a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
+
+a=outPrincipeSiler$mean$a
+a1=outPrincipeSiler$mean$a1
+a2=outPrincipeSiler$mean$a2
+a3=outPrincipeSiler$mean$a3
+b1=outPrincipeSiler$mean$b1
+b3=outPrincipeSiler$mean$b3
+SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
+############################
+pConst=(SConst[1:13+1])/(SConst[1:13])
+pSen=(SSen[1:13+1])/(SSen[1:13])
+pMat=(SMat[1:13+1])/(SMat[1:13])
+pSiler=(SSiler[1:13+1])/(SSiler[1:13])
+plot(0:12,pConst,ylim=c(0,1),type="l",xlab="",ylab="",main="Principe")
+lines(0:12,pSen,lty=2)
+lines(0:12,pMat,lty=3)
+lines(0:12,pSiler,lty=4)
+######################################
+## calculate survival lx-1/lx
+## ploting
+######################################
+
+a=outMorogoroE$mean$a
+a2=outMorogoroE$mean$a2
+SConst<-a*exp(-a2*dat$Age)
+
+outMorogoroSen$DIC
+a=outMorogoroSen$mean$a
+a2=outMorogoroSen$mean$a2
+b1=outMorogoroSen$mean$b1
+b3=outMorogoroSen$mean$b3
+SSen<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))
+
+outMorogoroMat$DIC
+a=outMorogoroMat$mean$a
+a1=outMorogoroMat$mean$a1
+a2=outMorogoroMat$mean$a2
+b1=outMorogoroMat$mean$b1
+SMat<-a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
+
+a=outMorogoroSiler$mean$a
+a1=outMorogoroSiler$mean$a1
+a2=outMorogoroSiler$mean$a2
+a3=outMorogoroSiler$mean$a3
+b1=outMorogoroSiler$mean$b1
+b3=outMorogoroSiler$mean$b3
+SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
+############################
+pConst=(SConst[1:13+1])/(SConst[1:13])
+pSen=(SSen[1:13+1])/(SSen[1:13])
+pMat=(SMat[1:13+1])/(SMat[1:13])
+pSiler=(SSiler[1:13+1])/(SSiler[1:13])
+plot(0:12,pConst,ylim=c(0,1),type="l",xlab="",ylab="",main="Morogoro")
+lines(0:12,pSen,lty=2)
+lines(0:12,pMat,lty=3)
+lines(0:12,pSiler,lty=4)
+## calculate survival lx-1/lx
+## ploting
+######################################
+
+a=outDarEsSalaamE$mean$a
+a2=outDarEsSalaamE$mean$a2
+SConst<-a*exp(-a2*dat$Age)
+
+outDarEsSalaamSen$DIC
+a=outDarEsSalaamSen$mean$a
+a2=outDarEsSalaamSen$mean$a2
+b1=outDarEsSalaamSen$mean$b1
+b3=outDarEsSalaamSen$mean$b3
+SSen<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))
+
+outDarEsSalaamMat$DIC
+a=outDarEsSalaamMat$mean$a
+a1=outDarEsSalaamMat$mean$a1
+a2=outDarEsSalaamMat$mean$a2
+b1=outDarEsSalaamMat$mean$b1
+SMat<-a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
+
+a=outDarEsSalaamSiler$mean$a
+a1=outDarEsSalaamSiler$mean$a1
+a2=outDarEsSalaamSiler$mean$a2
+a3=outDarEsSalaamSiler$mean$a3
+b1=outDarEsSalaamSiler$mean$b1
+b3=outDarEsSalaamSiler$mean$b3
+SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
+############################
+pConst=(SConst[1:13+1])/(SConst[1:13])
+pSen=(SSen[1:13+1])/(SSen[1:13])
+pMat=(SMat[1:13+1])/(SMat[1:13])
+pSiler=(SSiler[1:13+1])/(SSiler[1:13])
+plot(0:12,pConst,ylim=c(0,1),type="l",xlab="",ylab="",main="Dar Es Salaam")
+lines(0:12,pSen,lty=2)
+lines(0:12,pMat,lty=3)
+lines(0:12,pSiler,lty=4)
+
+plot(1, type="n", axes=F, xlab="", ylab="",main="Mortality risk")
+legend("center",legend=c("Constant","Maturation","Senescence","Both"),
+              lty=1:4,bty="n",cex=1.2)
+## below for Bioko and DIC table
+
 ## calculate survival lx-1/lx
 ## ploting
 ######################################
@@ -2570,3 +2626,90 @@ lines(0:12,pSen,lty=2)
 lines(0:12,pMat,lty=3)
 lines(0:12,pSiler,lty=4)
 ######################################
+
+
+## DIC table
+
+GhanaDIC<-c(outGhanaE$DIC,outGhanaMat$DIC,outGhanaSen$DIC,outGhanaSiler$DIC)
+PrincipeDIC<-c(outPrincipeE$DIC,outPrincipeMat$DIC,outPrincipeSen$DIC,outPrincipeSiler$DIC)
+DarEsSalaamDIC<-c(outDarEsSalaamE$DIC,outDarEsSalaamMat$DIC,outDarEsSalaamSen$DIC,outDarEsSalaamSiler$DIC)
+MorogoroDIC<-c(outMorogoroE$DIC,outMorogoroMat$DIC,outMorogoroSen$DIC,outMorogoroSiler$DIC)
+SaoTomeDIC<-c(outSaoTomeE$DIC,outSaoTomeMat$DIC,outSaoTomeSen$DIC,outSaoTomeSiler$DIC)
+
+DICtable<-round(cbind(GhanaDIC,
+                PrincipeDIC,
+                DarEsSalaamDIC,
+                MorogoroDIC,
+                SaoTomeDIC),2)
+row.names(DICtable)<-c("Constant","Maturation","Senescence","Both")
+colnames(DICtable)<-c("Ghana","Principe","Dar Es Salaam","Morogoro","Sao Tome")
+
+## parameter table
+GhanaParA<-c(outGhanaE$mean$a,outGhanaMat$mean$a,outGhanaSen$mean$a,outGhanaSiler$mean$a)
+GhanaParA1<-c("NA",outGhanaMat$mean$a1,"NA",outGhanaSiler$mean$a1)
+GhanaParA2<-c(outGhanaE$mean$a2,outGhanaMat$mean$a2,outGhanaSen$mean$a2,outGhanaSiler$mean$a2)
+GhanaParA3<-c("NA","NA",outGhanaSen$mean$a3,outGhanaSiler$mean$a3)
+GhanaParB1<-c("NA",outGhanaMat$mean$b1,"NA",outGhanaSiler$mean$b1)
+GhanaParB3<-c("NA","NA",outGhanaSen$mean$a3,outGhanaSiler$mean$a3)
+
+PrincipeParA<-c(outPrincipeE$mean$a,outPrincipeMat$mean$a,outPrincipeSen$mean$a,outPrincipeSiler$mean$a)
+PrincipeParA1<-c("NA",outPrincipeMat$mean$a1,"NA",outPrincipeSiler$mean$a1)
+PrincipeParA2<-c(outPrincipeE$mean$a2,outPrincipeMat$mean$a2,outPrincipeSen$mean$a2,outPrincipeSiler$mean$a2)
+PrincipeParA3<-c("NA","NA",outPrincipeSen$mean$a3,outPrincipeSiler$mean$a3)
+PrincipeParB1<-c("NA",outPrincipeMat$mean$b1,"NA",outPrincipeSiler$mean$b1)
+PrincipeParB3<-c("NA","NA",outPrincipeSen$mean$a3,outPrincipeSiler$mean$a3)
+
+DarEsSalaamParA<-c(outDarEsSalaamE$mean$a,outDarEsSalaamMat$mean$a,outDarEsSalaamSen$mean$a,outDarEsSalaamSiler$mean$a)
+DarEsSalaamParA1<-c("NA",outDarEsSalaamMat$mean$a1,"NA",outDarEsSalaamSiler$mean$a1)
+DarEsSalaamParA2<-c(outDarEsSalaamE$mean$a2,outDarEsSalaamMat$mean$a2,outDarEsSalaamSen$mean$a2,outDarEsSalaamSiler$mean$a2)
+DarEsSalaamParA3<-c("NA","NA",outDarEsSalaamSen$mean$a3,outDarEsSalaamSiler$mean$a3)
+DarEsSalaamParB1<-c("NA",outDarEsSalaamMat$mean$b1,"NA",outDarEsSalaamSiler$mean$b1)
+DarEsSalaamParB3<-c("NA","NA",outDarEsSalaamSen$mean$a3,outDarEsSalaamSiler$mean$a3)
+
+MorogoroParA<-c(outMorogoroE$mean$a,outMorogoroMat$mean$a,outMorogoroSen$mean$a,outMorogoroSiler$mean$a)
+MorogoroParA1<-c("NA",outMorogoroMat$mean$a1,"NA",outMorogoroSiler$mean$a1)
+MorogoroParA2<-c(outMorogoroE$mean$a2,outMorogoroMat$mean$a2,outMorogoroSen$mean$a2,outMorogoroSiler$mean$a2)
+MorogoroParA3<-c("NA","NA",outMorogoroSen$mean$a3,outMorogoroSiler$mean$a3)
+MorogoroParB1<-c("NA",outMorogoroMat$mean$b1,"NA",outMorogoroSiler$mean$b1)
+MorogoroParB3<-c("NA","NA",outMorogoroSen$mean$a3,outMorogoroSiler$mean$a3)
+
+SaoTomeParA<-c(outSaoTomeE$mean$a,outSaoTomeMat$mean$a,outSaoTomeSen$mean$a,outSaoTomeSiler$mean$a)
+SaoTomeParA1<-c("NA",outSaoTomeMat$mean$a1,"NA",outSaoTomeSiler$mean$a1)
+SaoTomeParA2<-c(outSaoTomeE$mean$a2,outSaoTomeMat$mean$a2,outSaoTomeSen$mean$a2,outSaoTomeSiler$mean$a2)
+SaoTomeParA3<-c("NA","NA",outSaoTomeSen$mean$a3,outSaoTomeSiler$mean$a3)
+SaoTomeParB1<-c("NA",outSaoTomeMat$mean$b1,"NA",outSaoTomeSiler$mean$b1)
+SaoTomeParB3<-c("NA","NA",outSaoTomeSen$mean$a3,outSaoTomeSiler$mean$a3)
+
+Partable<-cbind(
+  cbind(GhanaParA,
+                      GhanaParA1,
+                      GhanaParA2,
+                      GhanaParA3,
+                      GhanaParB1,
+                      GhanaParB3),
+  cbind(PrincipeParA,
+                      PrincipeParA1,
+                      PrincipeParA2,
+                      PrincipeParA3,
+                      PrincipeParB1,
+                      PrincipeParB3),
+  cbind(DarEsSalaamParA,
+                      DarEsSalaamParA1,
+                      DarEsSalaamParA2,
+                      DarEsSalaamParA3,
+                      DarEsSalaamParB1,
+                      DarEsSalaamParB3),
+  cbind(MorogoroParA,
+                      MorogoroParA1,
+                      MorogoroParA2,
+                      MorogoroParA3,
+                      MorogoroParB1,
+                      MorogoroParB3),
+  cbind(SaoTomeParA,
+                      SaoTomeParA1,
+                      SaoTomeParA2,
+                      SaoTomeParA3,
+                      SaoTomeParB1,
+                      SaoTomeParB3))
+row.names(Partable)<-c("Constant","Maturation","Senescence","Both")
+write.table(Partable,file="params.csv",sep="\t",row.names=T,col.names=T)
