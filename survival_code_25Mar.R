@@ -1,65 +1,18 @@
+outDarEsSalaamMat$DIC
 ###############################################
 rm(list=ls())
-setwd("~/ali_peel_survival")
-## set working directory
-## if working from a folder, used the next line and paste in
+getwd()
+#setwd("~/Dropbox/ali_peel_survival") # set working directory
 
-setwd("~/Dropbox/ali_peel_survival") # set working directory
-
-dat <- read.csv("eidolon_teeth_data.csv")
+dat <- read.csv("weightedAge.csv")
 dat<-dat[1:14,1:8]
 attach(dat)
-
-#Control parameters for model maximization
-
-control1<-nls.control(maxiter = 100000,
-                      tol = 1e-05,
-                      minFactor = 1/1024,
-                      printEval = F,
-                      warnOnly = T)
-
-#
-##
-
-max(Ghana)
-
-startingvalues<-list(a=max(Ghana),a2=0.2)
-# constant
-G1<-nls(Ghana~a*exp(-a2*Age),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G1)
 
 #####################
 
 # openbugs
 
 library(R2OpenBUGS)
-setwd("~/ali_peel_survival")
-sink("model.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a2~dnorm(0,10)
-    
-    precision<-1/ghana.var
-    ghana.var<-ghana.sd*ghana.sd
-    ghana.sd~dunif(0,100)
-    
-    for (i in 1:nobs){
-    Ghana[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
 
 win.data<-list(Ghana=dat$Ghana,Age=dat$Age,nobs=length(dat$Ghana))
 inits<-function()
@@ -70,57 +23,15 @@ ni=10000
 nb=1000
 nt=1
 outGhanaE<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-          model.file="model.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-          n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+                model.file="model.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                n.iter=ni,debug=F,DIC=T,working.directory=getwd())
 plot(outGhanaE)
 hist(outGhanaE$sims.list$a2)
 
 ######################################################
 # mat
-##
-## nls2
-st1 <- expand.grid(a = seq(100, 400, len = 10),
-                   a1 = seq(0.1, 10, len = 10),
-                   b1 = seq(0.1, 10, len = 10),
-                   a2 = seq(0.1, 10, len = 10))
-
-#startingvalues<-list(a=300,a1=2,b1=2,a2=0.2)
-library(nls2)
-
-M2<-nls2(Ghana~a*exp(-a2*Age)*exp((-a1/b1)*(1-exp(-b1*Age))),
-         start=st1,
-         algorithm="grid-search")#,
-         #trace=T,
-         #control=control1)
-summary(M2)
-##
 
 ####################
-sink("modelMature.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a1~dnorm(0,100)
-    a2~dnorm(0,100)
-    b1~dnorm(0,100)
-       
-    precision<-1/ghana.var
-    ghana.var<-ghana.sd*ghana.sd
-    ghana.sd~dunif(0,100)
-    
-    for (i in 1:nobs){
-    Ghana[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])*exp((-a1/b1)*(1-exp(-b1*Age[i])))
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
 win.data<-list(Ghana=dat$Ghana,Age=dat$Age,nobs=length(dat$Ghana))
 inits<-function()
   list(a=rnorm(1,300),a1=rnorm(1,5),a2=rnorm(1,0),b1=rnorm(1,7),ghana.sd=runif(1,0,30))
@@ -131,53 +42,15 @@ ni=10000
 nb=1000
 nt=1
 outGhanaMat<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-          model.file="modelMature.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-          n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+                  model.file="modelMature.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                  n.iter=ni,debug=T,DIC=T,working.directory=getwd())
 
 plot(outGhanaMat)
 hist(outGhanaMat$sims.list$a2)
 outGhanaMat
 
 ################################################################
-## nls2
-st1 <- expand.grid(a = seq(100, 400, len = 10),
-                   a2 = seq(0.1, 10, len = 10),
-                   a3 = seq(-0.01,- 10, len = 10),
-                   b3 = seq(-0.01,- 10, len = 10))
-
-#startingvalues<-list(a=300,a1=2,b1=2,a2=0.2)
-
-M3<-nls2(Ghana~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age))),
-         start=st1,
-         algorithm="grid-search")#,
-#trace=T,
-#control=control1)
-summary(M3)
 # sen
-sink("modelSen.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a3~dnorm(0,100)
-    a2~dnorm(0,100)
-    b3~dnorm(0,100)
-    
-    precision<-1/ghana.var
-    ghana.var<-ghana.sd*ghana.sd
-    ghana.sd~dunif(0,100)
-    
-    for (i in 1:nobs){
-    Ghana[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])*exp((-a3/b3)*(1-exp(b3*Age[i])))
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
 
 win.data<-list(Ghana=dat$Ghana,Age=dat$Age,nobs=length(dat$Ghana))
 inits<-function()
@@ -189,58 +62,14 @@ ni=10000
 nb=1000
 nt=10
 outGhanaSen<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-          model.file="modelSen.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-          n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+                  model.file="modelSen.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                  n.iter=ni,debug=T,DIC=T,working.directory=getwd())
 
 plot(outGhanaSen)
 outGhanaSen
-par(mfrow=c(2,2))
 
 ###############################################################
 ## both
-## nls2
-st1 <- expand.grid(a = seq(100, 400, len = 5),
-                   a1 = seq(0.1, 10, len = 5),
-                   a2 = seq(0.1, 10, len = 5),
-                   a3 = seq(-0.01,- 10, len = 5),
-                   b1 = seq(-0.01,- 10, len = 5),
-                   b3 = seq(-0.01,- 10, len = 5))
-
-#startingvalues<-list(a=300,a1=2,b1=2,a2=0.2)
-
-M4<-nls2(Ghana~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age)))*exp((-a1/b1)*(1-exp(-b1*Age))),
-         start=st1,
-         algorithm="grid-search")#,
-#trace=T,
-#control=control1)
-summary(M4)
-
-sink("modelSiler.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a1~dnorm(0,100)
-    a2~dnorm(0,100)
-    a3~dnorm(0,100)
-    b1~dnorm(0,100)
-    b3~dnorm(0,100)
-    
-    precision<-1/ghana.var
-    ghana.var<-ghana.sd*ghana.sd
-    ghana.sd~dunif(0,400)
-    
-    for (i in 1:nobs){
-    Ghana[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])*exp((-a3/b3)*(1-exp(b3*Age[i])))*exp((-a1/b1)*(1-exp(-b1*Age[i])))
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
 
 win.data<-list(Ghana=dat$Ghana,Age=dat$Age,nobs=length(dat$Ghana))
 inits<-function()
@@ -251,1490 +80,17 @@ ni=10000
 nb=1000
 nt=10
 outGhanaSiler<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-          model.file="modelSiler.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-          n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-#############
-##################
-## try SaoTome
-
-startingvalues<-list(a=max(SaoTome),a2=0.2)
-# constant
-G1<-nls(SaoTome~a*exp(-a2*Age),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G1)
-
-#####################
-
-# openbugs
-
-library(R2OpenBUGS)
-setwd("~/ali_peel_survival")
-sink("allmodel.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a2~dnorm(0,3)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,100)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$SaoTome,Age=dat$Age,nobs=length(dat$SaoTome))
-inits<-function()
-  list(a=rnorm(1,30),a2=rnorm(1,0),data.sd=runif(1,1,30))
-params<-c("a","a2","data.var")
-nc=3
-ni=10000
-nb=1000
-nt=1
-outSaoTomeE<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                model.file="allmodel.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-plot(outSaoTomeE)
-hist(outSaoTomeE$sims.list$a2)
-
-a=24.6
-a2=0.3
-Age=dat$Age
-plot(dat$Age,a*exp(-a2*Age),type="l")
-points(dat$Age,dat$SaoTome)
-
-######################################################
-# mat
-##
-## nls2
-st1 <- expand.grid(a = seq(1, 40, len = 10),
-                   a1 = seq(0.1, 10, len = 10),
-                   b1 = seq(0.1, 10, len = 10),
-                   a2 = seq(0.1, 10, len = 10))
-
-#startingvalues<-list(a=300,a1=2,b1=2,a2=0.2)
-library(nls2)
-
-M2<-nls2(SaoTome~a*exp(-a2*Age)*exp((-a1/b1)*(1-exp(-b1*Age))),
-         start=st1,
-         algorithm="grid-search")#,
-#trace=T,
-#control=control1)
-summary(M2)
-##
-startingvalues<-list(a=max(SaoTome),a1=1.2,b1=1.2,a2=0.1)
-G2<-nls(SaoTome~a*exp(-a2*Age)*exp((-a1/b1)*(1-exp(-b1*Age))),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G2)
-####################
-sink("allmodelMature.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a1~dnorm(0,100)
-    a2~dnorm(0,100)
-    b1~dnorm(0,100)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,100)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])*exp((-a1/b1)*(1-exp(-b1*Age[i])))
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$SaoTome,Age=dat$Age,nobs=length(dat$SaoTome))
-inits<-function()
-  list(a=rnorm(1,30),a1=rnorm(1,5),a2=rnorm(1,0),b1=rnorm(1,7),data.sd=runif(1,0,30))
-params<-c("a","a1","a2","b1","data.var")
-
-nc=3
-ni=10000
-nb=1000
-nt=1
-outSaoTomeMat<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                  model.file="allmodelMature.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                  n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-plot(outSaoTomeMat)
-hist(outSaoTomeMat$sims.list$a2)
-outSaoTomeMat
-a=24.2
-a1=0.1
-b1=0.000001
-a2=0.1
-Age=dat$Age
-plot(dat$Age,a*exp(-a2*Age)*exp((-a1/b1)*(1-exp(-b1*Age))),type="l")
-points(dat$Age,dat$SaoTome)
-
-################################################################
-## nls2
-st1 <- expand.grid(a = seq(1, 40, len = 10),
-                   a2 = seq(0.1, 10, len = 10),
-                   a3 = seq(-0.01,- 10, len = 10),
-                   b3 = seq(-0.01,- 10, len = 10))
-
-#startingvalues<-list(a=300,a1=2,b1=2,a2=0.2)
-
-M3<-nls2(SaoTome~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age))),
-         start=st1,
-         algorithm="grid-search")#,
-#trace=T,
-#control=control1)
-summary(M3)
-# sen
-startingvalues<-list(a=max(SaoTome),a2=0.1,a3=-1.12,b3=-1.12)
-G3<-nls(SaoTome~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age))),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G3)
-
-# sen
-
-sink("allmodelSen.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a3~dnorm(0,100)
-    a2~dnorm(0,100)
-    b3~dnorm(0,100)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,100)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])*exp((-a3/b3)*(1-exp(b3*Age[i])))
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$SaoTome,Age=dat$Age,nobs=length(dat$SaoTome))
-inits<-function()
-  list(a=rnorm(1,30),a3=rnorm(1,-6),a2=rnorm(1,0),b3=rnorm(1,-2),data.sd=runif(1,0,30))
-params<-c("a","a3","a2","b3","data.var")
-
-nc=3
-ni=10000
-nb=1000
-nt=10
-outSaoTomeSen<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                  model.file="allmodelSen.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                  n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-plot(outSaoTomeSen)
-outSaoTomeSen
-
-###############################################################
-## both
-## nls2
-st1 <- expand.grid(a = seq(1, 40, len = 5),
-                   a1 = seq(0.1, 10, len = 5),
-                   a2 = seq(0.1, 10, len = 5),
-                   a3 = seq(-0.01,- 10, len = 5),
-                   b1 = seq(-0.01,- 10, len = 5),
-                   b3 = seq(-0.01,- 10, len = 5))
-
-#startingvalues<-list(a=300,a1=2,b1=2,a2=0.2)
-
-M4<-nls2(SaoTome~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age)))*exp((-a1/b1)*(1-exp(-b1*Age))),
-         start=st1,
-         algorithm="grid-search")#,
-#trace=T,
-#control=control1)
-summary(M4)
-
-# both
-startingvalues<-list(a=max(SaoTome),a1=0.1,b1=-0.01,a2=0.1,a3=-5,b3=-10)
-G4<-nls(SaoTome~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age)))*exp((-a1/b1)*(1-exp(-b1*Age))),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G4)
-
-
-sink("allmodelSiler.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a1~dnorm(0,100)
-    a2~dnorm(0,100)
-    a3~dnorm(0,100)
-    b1~dnorm(0,100)
-    b3~dnorm(0,100)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,400)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])*exp((-a3/b3)*(1-exp(b3*Age[i])))*exp((-a1/b1)*(1-exp(-b1*Age[i])))
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$SaoTome,Age=dat$Age,nobs=length(dat$SaoTome))
-inits<-function()
-  list(a=rnorm(1,30),a1=rnorm(1,0.1),a2=rnorm(1,0.1),a3=rnorm(1,-5),b1=rnorm(1,-0.01),b3=rnorm(1,-10),data.sd=runif(1,1,30))
-params<-c("a","a1","a2","a3","b1","b3","data.var")
-nc=3
-ni=10000
-nb=1000
-nt=10
-outSaoTomeSiler<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                    model.file="allmodelSiler.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                    model.file="modelSiler.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
                     n.iter=ni,debug=T,DIC=T,working.directory=getwd())
 
 #############
-
-plot(Age,SaoTome,main="SaoTome",ylab="data")
-lines(fitted(G1),lty=1)
-lines(fitted(G2),lty=2)
-lines(fitted(G3),lty=3)
-lines(fitted(G4),lty=4)
-
-##
-
-legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
-       lty=1:4)
-
-## AIC all
-AIC(G1,G2,G3,G4)
-res.aic<-AIC(G1,G2,G3,G4)
-
-## model weights
-aics<-res.aic[order(-res.aic$AIC),]
-for(i in 1:dim(aics)[1]){
-  aics$diff[i]<-aics$AIC[1]-aics$AIC[i]}
-aics$wi<-2.71828182845904523536^(-0.5*aics$diff)
-aics$aic.weights<-aics$wi/sum(aics$wi)
-## 
-aics
-plot(aics$aic.weights,xaxt="n",xlab="model",ylab="AIC weights",pch=16,main="SaoTome")
-mtext(c("Both","Constant","Maturation","Senescence"),side=1,at=1:4)
-
-## NB can use barplot
-barplot(aics$aic.weights,xaxt="n",xlab="model",ylab="AIC weights",width=0.8,main="SaoTome")
-mtext(c("Both","Constant","Maturation","Senescence"),side=1,at=0.5:3.5)
-
-###################
-######################################
-## Principe
-
-startingvalues<-list(a=max(Principe),a2=0.2)
-# constant
-G1<-nls(Principe~a*exp(-a2*Age),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G1)
-
-#####################
-
-# openbugs
-
-library(R2OpenBUGS)
-setwd("~/ali_peel_survival")
-sink("allmodel.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a2~dnorm(0,3)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,100)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$Principe,Age=dat$Age,nobs=length(dat$Principe))
-inits<-function()
-  list(a=rnorm(1,30),a2=rnorm(1,0),data.sd=runif(1,1,30))
-params<-c("a","a2","data.var")
-nc=3
-ni=10000
-nb=1000
-nt=1
-outPrincipeE<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                  model.file="allmodel.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                  n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-plot(outPrincipeE)
-hist(outPrincipeE$sims.list$a2)
-
-######################################################
-# mat
-##
-## nls2
-st1 <- expand.grid(a = seq(1, 20, len = 10),
-                   a1 = seq(0.1, 10, len = 10),
-                   b1 = seq(0.1, 10, len = 10),
-                   a2 = seq(0.1, 10, len = 10))
-
-#startingvalues<-list(a=300,a1=2,b1=2,a2=0.2)
-library(nls2)
-
-M2<-nls2(Principe~a*exp(-a2*Age)*exp((-a1/b1)*(1-exp(-b1*Age))),
-         start=st1,
-         algorithm="grid-search")#,
-#trace=T,
-#control=control1)
-summary(M2)
-##
-startingvalues<-list(a=max(Principe),a1=0.1,b1=0.1,a2=0.1)
-G2<-nls(Principe~a*exp(-a2*Age)*exp((-a1/b1)*(1-exp(-b1*Age))),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G2)
-####################
-sink("allmodelMature.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a1~dnorm(0,100)
-    a2~dnorm(0,100)
-    b1~dnorm(0,100)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,100)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])*exp((-a1/b1)*(1-exp(-b1*Age[i])))
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$Principe,Age=dat$Age,nobs=length(dat$Principe))
-inits<-function()
-  list(a=rnorm(1,20),a1=rnorm(1,0.1),a2=rnorm(1,0.1),b1=rnorm(1,0.1),data.sd=runif(1,0,30))
-params<-c("a","a1","a2","b1","data.var")
-
-nc=3
-ni=10000
-nb=1000
-nt=1
-outPrincipeMat<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                    model.file="allmodelMature.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                    n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-plot(outPrincipeMat)
-hist(outPrincipeMat$sims.list$a2)
-outPrincipeMat
-
-################################################################
-## nls2
-st1 <- expand.grid(a = seq(1, 30, len = 10),
-                   a2 = seq(0.1, 10, len = 10),
-                   a3 = seq(-0.01,- 10, len = 10),
-                   b3 = seq(-0.01,- 10, len = 10))
-
-#startingvalues<-list(a=300,a1=2,b1=2,a2=0.2)
-
-M3<-nls2(Principe~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age))),
-         start=st1,
-         algorithm="grid-search")#,
-#trace=T,
-#control=control1)
-summary(M3)
-# sen
-startingvalues<-list(a=max(Principe),a2=0.1,a3=-0.1,b3=-0.1)
-G3<-nls(Principe~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age))),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G3)
-
-# sen
-
-sink("allmodelSen.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a3~dnorm(0,100)
-    a2~dnorm(0,100)
-    b3~dnorm(0,100)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,100)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])*exp((-a3/b3)*(1-exp(b3*Age[i])))
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$Principe,Age=dat$Age,nobs=length(dat$Principe))
-inits<-function()
-  list(a=rnorm(1,11),a3=rnorm(1,-0.01),a2=rnorm(1,0.1),b3=rnorm(1,-0.01),data.sd=runif(1,0,30))
-params<-c("a","a3","a2","b3","data.var")
-
-nc=3
-ni=10000
-nb=1000
-nt=10
-outPrincipeSen<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                    model.file="allmodelSen.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                    n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-plot(outPrincipeSen)
-outPrincipeSen
-
-###############################################################
-## both
-## nls2
-st1 <- expand.grid(a = seq(1, 40, len = 5),
-                   a1 = seq(0.1, 10, len = 5),
-                   a2 = seq(0.1, 10, len = 5),
-                   a3 = seq(-0.01,- 10, len = 5),
-                   b1 = seq(-0.01,- 10, len = 5),
-                   b3 = seq(-0.01,- 10, len = 5))
-
-
-#startingvalues<-list(a=300,a1=2,b1=2,a2=0.2)
-
-M4<-nls2(Principe~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age)))*exp((-a1/b1)*(1-exp(-b1*Age))),
-         start=st1,
-         algorithm="grid-search")#,
-#trace=T,
-#control=control1)
-summary(M4)
-
-# both
-startingvalues<-list(a=max(Principe),a1=0.1,b1=-0.001,a2=0.1,a3=-0.001,b3=-10)
-G4<-nls(Principe~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age)))*exp((-a1/b1)*(1-exp(-b1*Age))),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G4)
-
-
-sink("allmodelSiler.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a1~dnorm(0,100)
-    a2~dnorm(0,100)
-    a3~dnorm(0,100)
-    b1~dnorm(0,100)
-    b3~dnorm(0,100)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,400)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])*exp((-a3/b3)*(1-exp(b3*Age[i])))*exp((-a1/b1)*(1-exp(-b1*Age[i])))
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$Principe,Age=dat$Age,nobs=length(dat$Principe))
-inits<-function()
-  list(a=rnorm(1,15),a1=rnorm(1,0.1),a2=rnorm(1,0.1),a3=rnorm(1,-0.01),b1=rnorm(1,-0.01),b3=rnorm(1,-10),data.sd=runif(1,1,30))
-params<-c("a","a1","a2","a3","b1","b3","data.var")
-nc=3
-ni=10000
-nb=1000
-nt=10
-outPrincipeSiler<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                      model.file="allmodelSiler.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                      n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-#############
-
-plot(Age,Principe,main="Principe",ylab="data")
-lines(fitted(G1),lty=1)
-lines(fitted(G2),lty=2)
-lines(fitted(G3),lty=3)
-lines(fitted(G4),lty=4)
-
-##
-
-legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
-       lty=1:4)
-
-## AIC all
-AIC(G1,G2,G3,G4)
-res.aic<-AIC(G1,G2,G3,G4)
-
-## model weights
-aics<-res.aic[order(-res.aic$AIC),]
-for(i in 1:dim(aics)[1]){
-  aics$diff[i]<-aics$AIC[1]-aics$AIC[i]}
-aics$wi<-2.71828182845904523536^(-0.5*aics$diff)
-aics$aic.weights<-aics$wi/sum(aics$wi)
-## 
-aics
-plot(aics$aic.weights,xaxt="n",xlab="model",ylab="AIC weights",pch=16,main="Principe")
-mtext(c("Both","Constant","Maturation","Senescence"),side=1,at=1:4)
-
-## NB can use barplot
-barplot(aics$aic.weights,xaxt="n",xlab="model",ylab="AIC weights",width=0.8,main="Principe")
-mtext(c("Both","Constant","Maturation","Senescence"),side=1,at=0.5:3.5)
-
-######################################
-#########################################################################################################################################
-
-## Morogoro
-
-startingvalues<-list(a=max(Morogoro),a2=0.2)
-# constant
-G1<-nls(Morogoro~a*exp(-a2*Age),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G1)
-
-#####################
-
-# openbugs
-
-library(R2OpenBUGS)
-setwd("~/ali_peel_survival")
-sink("allmodel.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a2~dnorm(0,3)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,100)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$Morogoro,Age=dat$Age,nobs=length(dat$Morogoro))
-inits<-function()
-  list(a=rnorm(1,30),a2=rnorm(1,0),data.sd=runif(1,1,30))
-params<-c("a","a2","data.var")
-nc=3
-ni=10000
-nb=1000
-nt=1
-outMorogoroE<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                   model.file="allmodel.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                   n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-plot(outMorogoroE)
-hist(outMorogoroE$sims.list$a2)
-
-######################################################
-# mat
-##
-## nls2
-st1 <- expand.grid(a = seq(1, 40, len = 10),
-                   a1 = seq(0.1, 10, len = 10),
-                   b1 = seq(0.1, 10, len = 10),
-                   a2 = seq(0.1, 10, len = 10))
-
-#startingvalues<-list(a=300,a1=2,b1=2,a2=0.2)
-library(nls2)
-
-M2<-nls2(Morogoro~a*exp(-a2*Age)*exp((-a1/b1)*(1-exp(-b1*Age))),
-         start=st1,
-         algorithm="grid-search")#,
-#trace=T,
-#control=control1)
-summary(M2)
-##
-startingvalues<-list(a=max(Morogoro),a1=0.1,b1=0.1,a2=0.1)
-G2<-nls(Morogoro~a*exp(-a2*Age)*exp((-a1/b1)*(1-exp(-b1*Age))),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G2)
-####################
-sink("allmodelMature.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a1~dnorm(0,100)
-    a2~dnorm(0,100)
-    b1~dnorm(0,100)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,100)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])*exp((-a1/b1)*(1-exp(-b1*Age[i])))
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$Morogoro,Age=dat$Age,nobs=length(dat$Morogoro))
-inits<-function()
-  list(a=rnorm(1,14),a1=rnorm(1,0.1),a2=rnorm(1,0.1),b1=rnorm(1,0.1),data.sd=runif(1,0,30))
-params<-c("a","a1","a2","b1","data.var")
-
-nc=3
-ni=10000
-nb=1000
-nt=1
-outMorogoroMat<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                     model.file="allmodelMature.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                     n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-plot(outMorogoroMat)
-hist(outMorogoroMat$sims.list$a2)
-outMorogoroMat
-
-################################################################
-## nls2
-st1 <- expand.grid(a = seq(1, 30, len = 10),
-                   a2 = seq(0.1, 10, len = 10),
-                   a3 = seq(-0.01,- 10, len = 10),
-                   b3 = seq(-0.01,- 10, len = 10))
-
-#startingvalues<-list(a=300,a1=2,b1=2,a2=0.2)
-
-M3<-nls2(Morogoro~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age))),
-         start=st1,
-         algorithm="grid-search")#,
-#trace=T,
-#control=control1)
-summary(M3)
-# sen
-startingvalues<-list(a=max(Morogoro),a2=0.1,a3=-0.1,b3=-0.1)
-G3<-nls(Morogoro~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age))),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G3)
-
-# sen
-
-sink("allmodelSen.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a3~dnorm(0,100)
-    a2~dnorm(0,100)
-    b3~dnorm(0,100)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,100)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])*exp((-a3/b3)*(1-exp(b3*Age[i])))
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$Morogoro,Age=dat$Age,nobs=length(dat$Morogoro))
-inits<-function()
-  list(a=rnorm(1,11),a3=rnorm(1,-0.01),a2=rnorm(1,0.1),b3=rnorm(1,-0.01),data.sd=runif(1,0,30))
-params<-c("a","a3","a2","b3","data.var")
-
-nc=3
-ni=10000
-nb=1000
-nt=10
-outMorogoroSen<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                     model.file="allmodelSen.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                     n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-plot(outMorogoroSen)
-outMorogoroSen
-
-###############################################################
-## both
-## nls2
-st1 <- expand.grid(a = seq(1, 40, len = 5),
-                   a1 = seq(0.1, 10, len = 5),
-                   a2 = seq(0.1, 10, len = 5),
-                   a3 = seq(-0.01,- 10, len = 5),
-                   b1 = seq(-0.01,- 10, len = 5),
-                   b3 = seq(-0.01,- 10, len = 5))
-
-
-#startingvalues<-list(a=300,a1=2,b1=2,a2=0.2)
-
-M4<-nls2(Morogoro~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age)))*exp((-a1/b1)*(1-exp(-b1*Age))),
-         start=st1,
-         algorithm="grid-search")#,
-#trace=T,
-#control=control1)
-summary(M4)
-
-# both
-startingvalues<-list(a=max(Morogoro),a1=0.1,b1=-0.001,a2=0.1,a3=-0.001,b3=-10)
-G4<-nls(Morogoro~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age)))*exp((-a1/b1)*(1-exp(-b1*Age))),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G4)
-
-
-sink("allmodelSiler.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a1~dnorm(0,100)
-    a2~dnorm(0,100)
-    a3~dnorm(0,100)
-    b1~dnorm(0,100)
-    b3~dnorm(0,100)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,400)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])*exp((-a3/b3)*(1-exp(b3*Age[i])))*exp((-a1/b1)*(1-exp(-b1*Age[i])))
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$Morogoro,Age=dat$Age,nobs=length(dat$Morogoro))
-inits<-function()
-  list(a=rnorm(1,10),a1=rnorm(1,0.1),a2=rnorm(1,0.1),a3=rnorm(1,-0.01),b1=rnorm(1,-0.01),b3=rnorm(1,-10),data.sd=runif(1,1,30))
-params<-c("a","a1","a2","a3","b1","b3","data.var")
-nc=3
-ni=10000
-nb=1000
-nt=10
-outMorogoroSiler<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                       model.file="allmodelSiler.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                       n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-#############
-
-plot(Age,Morogoro,main="Morogoro",ylab="data")
-lines(fitted(G1),lty=1)
-lines(fitted(G2),lty=2)
-lines(fitted(G3),lty=3)
-lines(fitted(G4),lty=4)
-
-##
-
-legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
-       lty=1:4)
-
-## AIC all
-AIC(G1,G2,G3,G4)
-res.aic<-AIC(G1,G2,G3,G4)
-
-## model weights
-aics<-res.aic[order(-res.aic$AIC),]
-for(i in 1:dim(aics)[1]){
-  aics$diff[i]<-aics$AIC[1]-aics$AIC[i]}
-aics$wi<-2.71828182845904523536^(-0.5*aics$diff)
-aics$aic.weights<-aics$wi/sum(aics$wi)
-## 
-aics
-plot(aics$aic.weights,xaxt="n",xlab="model",ylab="AIC weights",pch=16,main="Morogoro")
-mtext(c("Both","Constant","Maturation","Senescence"),side=1,at=1:4)
-
-## NB can use barplot
-barplot(aics$aic.weights,xaxt="n",xlab="model",ylab="AIC weights",width=0.8,main="Morogoro")
-mtext(c("Both","Constant","Maturation","Senescence"),side=1,at=0.5:3.5)
-
-######################################
-###############################################################################
-
-
-## DarEsSalaam
-
-startingvalues<-list(a=max(DarEsSalaam),a2=0.2)
-# constant
-G1<-nls(DarEsSalaam~a*exp(-a2*Age),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G1)
-
-#####################
-
-# openbugs
-
-library(R2OpenBUGS)
-setwd("~/ali_peel_survival")
-sink("allmodel.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a2~dnorm(0,3)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,100)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$DarEsSalaam,Age=dat$Age,nobs=length(dat$DarEsSalaam))
-inits<-function()
-  list(a=rnorm(1,30),a2=rnorm(1,0),data.sd=runif(1,1,30))
-params<-c("a","a2","data.var")
-nc=3
-ni=10000
-nb=1000
-nt=1
-outDarEsSalaamE<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                   model.file="allmodel.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                   n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-plot(outDarEsSalaamE)
-hist(outDarEsSalaamE$sims.list$a2)
-
-######################################################
-# mat
-##
-## nls2
-st1 <- expand.grid(a = seq(1, 40, len = 10),
-                   a1 = seq(0.1, 10, len = 10),
-                   b1 = seq(0.1, 10, len = 10),
-                   a2 = seq(0.1, 10, len = 10))
-
-#startingvalues<-list(a=300,a1=2,b1=2,a2=0.2)
-library(nls2)
-
-M2<-nls2(DarEsSalaam~a*exp(-a2*Age)*exp((-a1/b1)*(1-exp(-b1*Age))),
-         start=st1,
-         algorithm="grid-search")#,
-#trace=T,
-#control=control1)
-summary(M2)
-##
-###############
-sink("allmodelMature.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a1~dnorm(0,100)
-    a2~dnorm(0,100)
-    b1~dnorm(0,100)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,100)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])*exp((-a1/b1)*(1-exp(-b1*Age[i])))
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$DarEsSalaam,Age=dat$Age,nobs=length(dat$DarEsSalaam))
-inits<-function()
-  list(a=rnorm(1,9),a1=rnorm(1,1),a2=rnorm(1,0.1),b1=rnorm(1,1),data.sd=runif(1,0,30))
-params<-c("a","a1","a2","b1","data.var")
-
-nc=3
-ni=10000
-nb=1000
-nt=1
-outDarEsSalaamMat<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                     model.file="allmodelMature.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                     n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-plot(outDarEsSalaamMat)
-hist(outDarEsSalaamMat$sims.list$a2)
-outDarEsSalaamMat
-
-################################################################
-## nls2
-st1 <- expand.grid(a = seq(1, 30, len = 10),
-                   a2 = seq(0.1, 10, len = 10),
-                   a3 = seq(-0.01,- 10, len = 10),
-                   b3 = seq(-0.01,- 10, len = 10))
-
-#startingvalues<-list(a=300,a1=2,b1=2,a2=0.2)
-
-M3<-nls2(DarEsSalaam~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age))),
-         start=st1,
-         algorithm="grid-search")#,
-#trace=T,
-#control=control1)
-summary(M3)
-# sen
-startingvalues<-list(a=max(DarEsSalaam),a2=0.1,a3=-0.1,b3=-0.1)
-G3<-nls(DarEsSalaam~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age))),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G3)
-
-# sen
-
-sink("allmodelSen.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a3~dnorm(0,100)
-    a2~dnorm(0,100)
-    b3~dnorm(0,100)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,100)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])*exp((-a3/b3)*(1-exp(b3*Age[i])))
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$DarEsSalaam,Age=dat$Age,nobs=length(dat$DarEsSalaam))
-inits<-function()
-  list(a=rnorm(1,7.4),a3=rnorm(1,-0.01),a2=rnorm(1,0.1),b3=rnorm(1,-0.1),data.sd=runif(1,0,30))
-params<-c("a","a3","a2","b3","data.var")
-
-nc=3
-ni=10000
-nb=1000
-nt=10
-outDarEsSalaamSen<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                     model.file="allmodelSen.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                     n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-plot(outDarEsSalaamSen)
-outDarEsSalaamSen
-
-###############################################################
-## both
-## nls2
-st1 <- expand.grid(a = seq(1, 40, len = 5),
-                   a1 = seq(0.1, 10, len = 5),
-                   a2 = seq(0.1, 10, len = 5),
-                   a3 = seq(-0.01,- 10, len = 5),
-                   b1 = seq(-0.01,- 10, len = 5),
-                   b3 = seq(-0.01,- 10, len = 5))
-
-
-#startingvalues<-list(a=300,a1=2,b1=2,a2=0.2)
-
-M4<-nls2(DarEsSalaam~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age)))*exp((-a1/b1)*(1-exp(-b1*Age))),
-         start=st1,
-         algorithm="grid-search")#,
-#trace=T,
-#control=control1)
-summary(M4)
-
-# both
-startingvalues<-list(a=max(DarEsSalaam),a1=0.1,b1=-0.001,a2=0.1,a3=-0.001,b3=-10)
-G4<-nls(DarEsSalaam~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age)))*exp((-a1/b1)*(1-exp(-b1*Age))),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G4)
-
-
-sink("allmodelSiler.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a1~dnorm(0,100)
-    a2~dnorm(0,100)
-    a3~dnorm(0,100)
-    b1~dnorm(0,100)
-    b3~dnorm(0,100)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,400)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])*exp((-a3/b3)*(1-exp(b3*Age[i])))*exp((-a1/b1)*(1-exp(-b1*Age[i])))
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$DarEsSalaam,Age=dat$Age,nobs=length(dat$DarEsSalaam))
-inits<-function()
-  list(a=rnorm(1,10),a1=rnorm(1,0.1),a2=rnorm(1,0.1),a3=rnorm(1,-0.01),b1=rnorm(1,-0.01),b3=rnorm(1,-10),data.sd=runif(1,1,30))
-params<-c("a","a1","a2","a3","b1","b3","data.var")
-nc=3
-ni=10000
-nb=1000
-nt=10
-outDarEsSalaamSiler<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                       model.file="allmodelSiler.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                       n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-#############
-
-plot(Age,DarEsSalaam,main="DarEsSalaam",ylab="data")
-lines(fitted(G1),lty=1)
-lines(fitted(G2),lty=2)
-lines(fitted(G3),lty=3)
-lines(fitted(G4),lty=4)
-
-##
-
-legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
-       lty=1:4)
-
-## AIC all
-AIC(G1,G2,G3,G4)
-res.aic<-AIC(G1,G2,G3,G4)
-
-## model weights
-aics<-res.aic[order(-res.aic$AIC),]
-for(i in 1:dim(aics)[1]){
-  aics$diff[i]<-aics$AIC[1]-aics$AIC[i]}
-aics$wi<-2.71828182845904523536^(-0.5*aics$diff)
-aics$aic.weights<-aics$wi/sum(aics$wi)
-## 
-aics
-plot(aics$aic.weights,xaxt="n",xlab="model",ylab="AIC weights",pch=16,main="DarEsSalaam")
-mtext(c("Both","Constant","Maturation","Senescence"),side=1,at=1:4)
-
-## NB can use barplot
-barplot(aics$aic.weights,xaxt="n",xlab="model",ylab="AIC weights",width=0.8,main="DarEsSalaam")
-mtext(c("Both","Constant","Maturation","Senescence"),side=1,at=0.5:3.5)
-
-##########################################################
-
-## Bioko
-
-startingvalues<-list(a=max(Bioko),a2=0.2)
-# constant
-G1<-nls(Bioko~a*exp(-a2*Age),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G1)
-
-#####################
-
-# openbugs
-
-library(R2OpenBUGS)
-setwd("~/ali_peel_survival")
-sink("allmodel.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a2~dnorm(0,3)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,100)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$Bioko,Age=dat$Age,nobs=length(dat$Bioko))
-inits<-function()
-  list(a=rnorm(1,84),a2=rnorm(3,0),data.sd=runif(1,1,30))
-params<-c("a","a2","data.var")
-nc=3
-ni=10000
-nb=1000
-nt=1
-outBiokoE<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                      model.file="allmodel.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                      n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-plot(outBiokoE)
-hist(outBiokoE$sims.list$a2)
-
-######################################################
-# mat
-##
-## nls2
-st1 <- expand.grid(a = seq(1, 100, len = 10),
-                   a1 = seq(0.1, 10, len = 10),
-                   b1 = seq(0.1, 10, len = 10),
-                   a2 = seq(0.1, 10, len = 10))
-
-#startingvalues<-list(a=300,a1=2,b1=2,a2=0.2)
-library(nls2)
-
-M2<-nls2(Bioko~a*exp(-a2*Age)*exp((-a1/b1)*(1-exp(-b1*Age))),
-         start=st1,
-         algorithm="grid-search")#,
-#trace=T,
-#control=control1)
-summary(M2)
-##
-startingvalues<-list(a=max(Bioko),a1=0.1,b1=0.1,a2=0.1)
-G2<-nls(Bioko~a*exp(-a2*Age)*exp((-a1/b1)*(1-exp(-b1*Age))),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G2)
-####################
-sink("allmodelMature.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a1~dnorm(0,100)
-    a2~dnorm(0,100)
-    b1~dnorm(0,100)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,100)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])*exp((-a1/b1)*(1-exp(-b1*Age[i])))
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$Bioko,Age=dat$Age,nobs=length(dat$Bioko))
-inits<-function()
-  list(a=rnorm(1,89),a1=rnorm(1,8),a2=rnorm(1,0.1),b1=rnorm(1,2.3),data.sd=runif(1,0,30))
-params<-c("a","a1","a2","b1","data.var")
-
-nc=3
-ni=10000
-nb=1000
-nt=1
-outBiokoMat<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                        model.file="allmodelMature.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                        n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-plot(outBiokoMat)
-hist(outBiokoMat$sims.list$a2)
-outBiokoMat
-
-################################################################
-## nls2
-st1 <- expand.grid(a = seq(1, 30, len = 10),
-                   a2 = seq(0.1, 10, len = 10),
-                   a3 = seq(-0.01,- 10, len = 10),
-                   b3 = seq(-0.01,- 10, len = 10))
-
-#startingvalues<-list(a=300,a1=2,b1=2,a2=0.2)
-
-M3<-nls2(Bioko~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age))),
-         start=st1,
-         algorithm="grid-search")#,
-#trace=T,
-#control=control1)
-summary(M3)
-# sen
-startingvalues<-list(a=max(Bioko),a2=0.1,a3=-0.1,b3=-0.1)
-G3<-nls(Bioko~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age))),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G3)
-
-# sen
-
-sink("allmodelSen.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a3~dnorm(0,100)
-    a2~dnorm(0,100)
-    b3~dnorm(0,100)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,100)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])*exp((-a3/b3)*(1-exp(b3*Age[i])))
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$Bioko,Age=dat$Age,nobs=length(dat$Bioko))
-inits<-function()
-  list(a=rnorm(1,30),a3=rnorm(1,-9),a2=rnorm(1,0.1),b3=rnorm(1,-5),data.sd=runif(1,0,30))
-params<-c("a","a3","a2","b3","data.var")
-
-nc=3
-ni=10000
-nb=1000
-nt=10
-outBiokoSen<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                        model.file="allmodelSen.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                        n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-plot(outBiokoSen)
-outBiokoSen
-
-###############################################################
-## both
-## nls2
-st1 <- expand.grid(a = seq(1, 40, len = 5),
-                   a1 = seq(0.1, 10, len = 5),
-                   a2 = seq(0.1, 10, len = 5),
-                   a3 = seq(-0.01,- 10, len = 5),
-                   b1 = seq(-0.01,- 10, len = 5),
-                   b3 = seq(-0.01,- 10, len = 5))
-
-
-#startingvalues<-list(a=300,a1=2,b1=2,a2=0.2)
-
-M4<-nls2(Bioko~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age)))*exp((-a1/b1)*(1-exp(-b1*Age))),
-         start=st1,
-         algorithm="grid-search")#,
-#trace=T,
-#control=control1)
-summary(M4)
-
-# both
-startingvalues<-list(a=max(Bioko),a1=0.1,b1=-0.001,a2=0.1,a3=-0.001,b3=-10)
-G4<-nls(Bioko~a*exp(-a2*Age)*exp((-a3/b3)*(1-exp(b3*Age)))*exp((-a1/b1)*(1-exp(-b1*Age))),
-        start=startingvalues,
-        algorithm="port",
-        trace=T,
-        control=control1)
-summary(G4)
-
-
-sink("allmodelSiler.txt")
-cat("
-    model{
-    a~dunif(0,1000)
-    a1~dnorm(0,100)
-    a2~dnorm(0,100)
-    a3~dnorm(0,100)
-    b1~dnorm(0,100)
-    b3~dnorm(0,100)
-    
-    precision<-1/data.var
-    data.var<-data.sd*data.sd
-    data.sd~dunif(0,400)
-    
-    for (i in 1:nobs){
-    data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-a2*Age[i])*exp((-a3/b3)*(1-exp(b3*Age[i])))*exp((-a1/b1)*(1-exp(-b1*Age[i])))
-    }
-    }
-    
-    ",fill=T)
-sink()
-## 
-
-
-dat <- read.csv("eidolon_teeth_data.csv")
-
-win.data<-list(data=dat$Bioko,Age=dat$Age,nobs=length(dat$Bioko))
-inits<-function()
-  list(a=rnorm(1,10),a1=rnorm(1,0.1),a2=rnorm(1,0.1),a3=rnorm(1,-0.01),b1=rnorm(1,-0.01),b3=rnorm(1,-10),data.sd=runif(1,1,30))
-params<-c("a","a1","a2","a3","b1","b3","data.var")
-nc=3
-ni=10000
-nb=1000
-nt=10
-outBiokoSiler<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                          model.file="allmodelSiler.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                          n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-#############
-
-plot(Age,Bioko,main="Bioko",ylab="data")
-lines(fitted(G1),lty=1)
-lines(fitted(G2),lty=2)
-lines(fitted(G3),lty=3)
-lines(fitted(G4),lty=4)
-
-##
-
-legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
-       lty=1:4)
-
-## AIC all
-AIC(G1,G2,G3,G4)
-res.aic<-AIC(G1,G2,G3,G4)
-
-## model weights
-aics<-res.aic[order(-res.aic$AIC),]
-for(i in 1:dim(aics)[1]){
-  aics$diff[i]<-aics$AIC[1]-aics$AIC[i]}
-aics$wi<-2.71828182845904523536^(-0.5*aics$diff)
-aics$aic.weights<-aics$wi/sum(aics$wi)
-## 
-aics
-plot(aics$aic.weights,xaxt="n",xlab="model",ylab="AIC weights",pch=16,main="Bioko")
-mtext(c("Both","Constant","Maturation","Senescence"),side=1,at=1:4)
-
-## NB can use barplot
-barplot(aics$aic.weights,xaxt="n",xlab="model",ylab="AIC weights",width=0.8,main="Bioko")
-mtext(c("Both","Constant","Maturation","Senescence"),side=1,at=0.5:3.5)
-
-######################################
 ## ploting
 ######################################
 outGhanaE$DIC
 a=outGhanaE$mean$a
 a2=outGhanaE$mean$a2
 
-plot(dat$Age,a*exp(-a2*dat$Age),ylab="",xlab="Age",type="l",ylim=c(0,300))
+plot(dat$Age,a*exp(-a2*dat$Age),ylab="Count",xlab="Age",type="l",ylim=c(0,300),main="Ghana")
 ## plot CI
 predictions<-array(dim=c(length(dat$Age),length(outGhanaE$sims.list$a)))
 for (i in 1:length(dat$Age)){
@@ -1749,7 +105,7 @@ polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = 
 outGhanaSen$DIC
 a=outGhanaSen$mean$a
 a2=outGhanaSen$mean$a2
-a3=outGhanaSen$mean$a3
+b1=outGhanaSen$mean$b1
 b3=outGhanaSen$mean$b3
 
 lines(dat$Age,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age))),lty=2)
@@ -1806,14 +162,9 @@ legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
 
 points(dat$Age,dat$Ghana,bg="black",pch=21)
 
-#### end figure of fits and data
-
 min=min(outGhanaE$DIC,outGhanaMat$DIC,outGhanaSen$DIC,outGhanaSiler$DIC)
 barplot(c(outGhanaE$DIC-min,outGhanaMat$DIC-min,outGhanaSen$DIC-min,outGhanaSiler$DIC-min),
         names.arg=c("Constant","Maturation","Senescence","Both"))
-
-### end DIC
-## param est
 
 par(mfrow=c(3,2))
 hist(outGhanaSiler$sims.list$a, main="a",xlab="",col="grey")
@@ -1833,42 +184,170 @@ abline(v=outGhanaSiler$mean$b3,col="red")
 # plotting posterior vs priors
 plot(density(outGhanaSiler$sims.list$a), main="a",xlab="",xlim=c(0,1000))
 polygon(density(outGhanaSiler$sims.list$a), col =  "#00000010", border = NA)
-lines(density(runif(1:1000,min=0,max=1000)))
-polygon(density(runif(1:1000,min=0,max=1000)), col =  "#00000010", border = NA)
+lines(density(runif(1:1000,min=0,max=1000)),col="red")
+polygon(density(runif(1:1000,min=0,max=1000)), col =  "#FF000010", border = NA)
 
 plot(density(outGhanaSiler$sims.list$a1), main="a1",xlab="")
 polygon(density(outGhanaSiler$sims.list$a1), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))))
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
+lines(density((rnorm(1:1000,mean=0,sd=10))),col="red")
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
 
 plot(density(outGhanaSiler$sims.list$a2), main="a2",xlab="")
 polygon(density(outGhanaSiler$sims.list$a2), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))))
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
+lines(density((rnorm(1:1000,mean=0,sd=10))),col="red")
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
 
 plot(density(outGhanaSiler$sims.list$a3), main="a3",xlab="")
 polygon(density(outGhanaSiler$sims.list$a3), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))))
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
+lines(density((rnorm(1:1000,mean=0,sd=10))),,col="red")
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
 
 plot(density(outGhanaSiler$sims.list$b1), main="b1",xlab="")
 polygon(density(outGhanaSiler$sims.list$b1), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))))
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
+lines(density((rnorm(1:1000,mean=0,sd=10))),col="red")
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
 
 plot(density(outGhanaSiler$sims.list$b3), main="b3",xlab="")
 polygon(density(outGhanaSiler$sims.list$b3), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))))
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
+lines(density((rnorm(1:1000,mean=0,sd=10))),col="red")
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
 
 ########################
+
+## calculate survival lx-1/lx
+## ploting
+######################################
+
+a=outGhanaE$mean$a
+a2=outGhanaE$mean$a2
+GhanaSConst<-a*exp(-a2*dat$Age)
+
+outGhanaSen$DIC
+a=outGhanaSen$mean$a
+a2=outGhanaSen$mean$a2
+b1=outGhanaSen$mean$b1
+b3=outGhanaSen$mean$b3
+SSen<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))
+
+outGhanaMat$DIC
+a=outGhanaMat$mean$a
+a1=outGhanaMat$mean$a1
+a2=outGhanaMat$mean$a2
+b1=outGhanaMat$mean$b1
+SMat<-a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
+
+a=outGhanaSiler$mean$a
+a1=outGhanaSiler$mean$a1
+a2=outGhanaSiler$mean$a2
+a3=outGhanaSiler$mean$a3
+b1=outGhanaSiler$mean$b1
+b3=outGhanaSiler$mean$b3
+SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
+############################
+GhanapConst=(GhanaSConst[1:13+1])/(GhanaSConst[1:13])
+pSen=(SSen[1:13+1])/(SSen[1:13])
+pMat=(SMat[1:13+1])/(SMat[1:13])
+pSiler=(SSiler[1:13+1])/(SSiler[1:13])
 par(mfrow=c(1,1))
+plot(0:12,GhanapConst,ylim=c(0,1),type="l",xlab="Age",ylab="Survival",main="Ghana")
+lines(0:12,pSen,lty=2)
+lines(0:12,pMat,lty=3)
+lines(0:12,pSiler,lty=4)
+legend("bottomright",legend=c("Constant","Maturation","Senescence","Both"),
+       lty=1:4,bty="n")
+
+##################
+## try SaoTome
+
+win.data<-list(data=dat$SaoTome,Age=dat$Age,nobs=length(dat$SaoTome))
+inits<-function()
+  list(a=rnorm(1,30),a2=rnorm(1,0),data.sd=runif(1,1,30))
+params<-c("a","a2","data.var")
+nc=3
+ni=10000
+nb=1000
+nt=1
+outSaoTomeE<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+                  model.file="allmodel.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                  n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+plot(outSaoTomeE)
+hist(outSaoTomeE$sims.list$a2)
+
+a=24.6
+a2=0.3
+Age=dat$Age
+plot(dat$Age,a*exp(-a2*Age),type="l")
+points(dat$Age,dat$SaoTome)
+
+######################################################
+# mat
+
+win.data<-list(data=dat$SaoTome,Age=dat$Age,nobs=length(dat$SaoTome))
+inits<-function()
+  list(a=rnorm(1,30),a1=rnorm(1,5),a2=rnorm(1,0),b1=rnorm(1,7),data.sd=runif(1,0,30))
+params<-c("a","a1","a2","b1","data.var")
+
+nc=3
+ni=10000
+nb=1000
+nt=1
+outSaoTomeMat<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+                    model.file="allmodelMature.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                    n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+
+plot(outSaoTomeMat)
+hist(outSaoTomeMat$sims.list$a2)
+outSaoTomeMat
+a=24.2
+a1=0.1
+b1=0.000001
+a2=0.1
+Age=dat$Age
+plot(dat$Age,a*exp(-a2*Age)*exp((-a1/b1)*(1-exp(-b1*Age))),type="l")
+points(dat$Age,dat$SaoTome)
+
+################################################################
+
+# sen
+
+win.data<-list(data=dat$SaoTome,Age=dat$Age,nobs=length(dat$SaoTome))
+inits<-function()
+  list(a=rnorm(1,30),a3=rnorm(1,-6),a2=rnorm(1,0),b3=rnorm(1,-2),data.sd=runif(1,0,30))
+params<-c("a","a3","a2","b3","data.var")
+
+nc=3
+ni=10000
+nb=1000
+nt=10
+outSaoTomeSen<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+                    model.file="allmodelSen.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                    n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+
+plot(outSaoTomeSen)
+outSaoTomeSen
+
+###############################################################
+## both
+
+win.data<-list(data=dat$SaoTome,Age=dat$Age,nobs=length(dat$SaoTome))
+inits<-function()
+  list(a=rnorm(1,30),a1=rnorm(1,0.1),a2=rnorm(1,0.1),a3=rnorm(1,-5),b1=rnorm(1,-0.01),b3=rnorm(1,-10),data.sd=runif(1,1,30))
+params<-c("a","a1","a2","a3","b1","b3","data.var")
+nc=3
+ni=10000
+nb=1000
+nt=10
+outSaoTomeSiler<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+                      model.file="allmodelSiler.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                      n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+
+#############
 ######################################
 outSaoTomeE$DIC
 a=outSaoTomeE$mean$a
 a2=outSaoTomeE$mean$a2
 
-plot(0:13,a*exp(-a2*dat$Age),ylab="",xlab="Age",type="l",ylim=c(0,40))
+plot(0:13,a*exp(-a2*dat$Age),ylab="Count",xlab="Age",type="l",ylim=c(0,40),main= "Sao Tome")
 ## plot CI
 predictions<-array(dim=c(length(dat$Age),length(outSaoTomeE$sims.list$a)))
 for (i in 1:length(dat$Age)){
@@ -1883,7 +362,7 @@ polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = 
 outSaoTomeSen$DIC
 a=outSaoTomeSen$mean$a
 a2=outSaoTomeSen$mean$a2
-a3=outSaoTomeSen$mean$a3
+b1=outSaoTomeSen$mean$b1
 b3=outSaoTomeSen$mean$b3
 
 lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age))),lty=2)
@@ -1958,45 +437,153 @@ abline(v=outSaoTomeSiler$mean$b1,col="red")
 hist(outSaoTomeSiler$sims.list$b3, main="b3",xlab="",col="grey")
 abline(v=outSaoTomeSiler$mean$b3,col="red")
 ###############################################################################
-###########################################
 # plotting posterior vs priors
-plot(density(outSaoTomeSiler$sims.list$a), main="a",xlab="",xlim=c(0,1000))
+plot(density(outSaoTomeSiler$sims.list$a), main="a",xlab="",xlim=c(0,200))
 polygon(density(outSaoTomeSiler$sims.list$a), col =  "#00000010", border = NA)
-lines(density(runif(1:1000,min=0,max=1000)))
-polygon(density(runif(1:1000,min=0,max=1000)), col =  "#00000010", border = NA)
+lines(density(runif(1:1000,min=0,max=1000)),col="red")
+polygon(density(runif(1:1000,min=0,max=1000)), col =  "#FF000010", border = NA)
 
 plot(density(outSaoTomeSiler$sims.list$a1), main="a1",xlab="")
 polygon(density(outSaoTomeSiler$sims.list$a1), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))))
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
+lines(density((rnorm(1:1000,mean=0,sd=10))),col="red")
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
 
 plot(density(outSaoTomeSiler$sims.list$a2), main="a2",xlab="")
 polygon(density(outSaoTomeSiler$sims.list$a2), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))))
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
+lines(density((rnorm(1:1000,mean=0,sd=10))),col="red")
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
 
 plot(density(outSaoTomeSiler$sims.list$a3), main="a3",xlab="")
 polygon(density(outSaoTomeSiler$sims.list$a3), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))))
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
+lines(density((rnorm(1:1000,mean=0,sd=10))),,col="red")
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
 
 plot(density(outSaoTomeSiler$sims.list$b1), main="b1",xlab="")
 polygon(density(outSaoTomeSiler$sims.list$b1), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))))
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
+lines(density((rnorm(1:1000,mean=0,sd=10))),col="red")
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
 
 plot(density(outSaoTomeSiler$sims.list$b3), main="b3",xlab="")
 polygon(density(outSaoTomeSiler$sims.list$b3), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))))
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#00000010", border = NA)
-###################################################################
-par(mfrow=c(1,1))
+lines(density((rnorm(1:1000,mean=0,sd=10))),col="red")
+polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
 
+###############################
+
+## calculate survival lx-1/lx
+## ploting
+######################################
+
+a=outSaoTomeE$mean$a
+a2=outSaoTomeE$mean$a2
+SaoTomeSConst<-a*exp(-a2*dat$Age)
+
+outSaoTomeSen$DIC
+a=outSaoTomeSen$mean$a
+a2=outSaoTomeSen$mean$a2
+b1=outSaoTomeSen$mean$b1
+b3=outSaoTomeSen$mean$b3
+SSen<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))
+
+outSaoTomeMat$DIC
+a=outSaoTomeMat$mean$a
+a1=outSaoTomeMat$mean$a1
+a2=outSaoTomeMat$mean$a2
+b1=outSaoTomeMat$mean$b1
+SMat<-a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
+
+a=outSaoTomeSiler$mean$a
+a1=outSaoTomeSiler$mean$a1
+a2=outSaoTomeSiler$mean$a2
+a3=outSaoTomeSiler$mean$a3
+b1=outSaoTomeSiler$mean$b1
+b3=outSaoTomeSiler$mean$b3
+SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
+############################
+SaoTomepConst=(SaoTomeSConst[1:13+1])/(SaoTomeSConst[1:13])
+pSen=(SSen[1:13+1])/(SSen[1:13])
+pMat=(SMat[1:13+1])/(SMat[1:13])
+pSiler=(SSiler[1:13+1])/(SSiler[1:13])
+plot(0:12,SaoTomepConst,ylim=c(0,1),type="l",xlab="Age",ylab="Survival",main="Sao Tome")
+lines(0:12,pSen,lty=2)
+lines(0:12,pMat,lty=3)
+lines(0:12,pSiler,lty=4)
+######################################
+## Principe
+
+win.data<-list(data=dat$Principe,Age=dat$Age,nobs=length(dat$Principe))
+inits<-function()
+  list(a=rnorm(1,30),a2=rnorm(1,0),data.sd=runif(1,1,30))
+params<-c("a","a2","data.var")
+nc=3
+ni=10000
+nb=1000
+nt=1
+outPrincipeE<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+                   model.file="allmodel.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                   n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+plot(outPrincipeE)
+hist(outPrincipeE$sims.list$a2)
+
+######################################################
+# mat
+
+win.data<-list(data=dat$Principe,Age=dat$Age,nobs=length(dat$Principe))
+inits<-function()
+  list(a=rnorm(1,20),a1=rnorm(1,0.1),a2=rnorm(1,0.1),b1=rnorm(1,0.1),data.sd=runif(1,0,30))
+params<-c("a","a1","a2","b1","data.var")
+
+nc=3
+ni=10000
+nb=1000
+nt=1
+outPrincipeMat<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+                     model.file="allmodelMature.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                     n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+
+plot(outPrincipeMat)
+hist(outPrincipeMat$sims.list$a2)
+outPrincipeMat
+
+################################################################
+
+win.data<-list(data=dat$Principe,Age=dat$Age,nobs=length(dat$Principe))
+inits<-function()
+  list(a=rnorm(1,11),a3=rnorm(1,-0.01),a2=rnorm(1,0.1),b3=rnorm(1,-0.01),data.sd=runif(1,0,30))
+params<-c("a","a3","a2","b3","data.var")
+
+nc=3
+ni=10000
+nb=1000
+nt=10
+outPrincipeSen<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+                     model.file="allmodelSen.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                     n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+
+plot(outPrincipeSen)
+outPrincipeSen
+
+###############################################################
+## both
+
+win.data<-list(data=dat$Principe,Age=dat$Age,nobs=length(dat$Principe))
+inits<-function()
+  list(a=rnorm(1,15),a1=rnorm(1,0.1),a2=rnorm(1,0.1),a3=rnorm(1,-0.01),b1=rnorm(1,-0.01),b3=rnorm(1,-10),data.sd=runif(1,1,30))
+params<-c("a","a1","a2","a3","b1","b3","data.var")
+nc=3
+ni=10000
+nb=1000
+nt=10
+outPrincipeSiler<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+                       model.file="allmodelSiler.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                       n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+
+######################################
 outPrincipeE$DIC
 a=outPrincipeE$mean$a
 a2=outPrincipeE$mean$a2
 
-plot(0:13,a*exp(-a2*dat$Age),ylab="",xlab="Age",type="l",ylim=c(0,20))
+plot(0:13,a*exp(-a2*dat$Age),ylab="Count",xlab="Age",type="l",ylim=c(0,20),main="Principe")
 ## plot CI
 predictions<-array(dim=c(length(dat$Age),length(outPrincipeE$sims.list$a)))
 for (i in 1:length(dat$Age)){
@@ -2011,7 +598,7 @@ polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = 
 outPrincipeSen$DIC
 a=outPrincipeSen$mean$a
 a2=outPrincipeSen$mean$a2
-a3=outPrincipeSen$mean$a3
+b1=outPrincipeSen$mean$b1
 b3=outPrincipeSen$mean$b3
 
 lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age))),lty=2)
@@ -2086,13 +673,124 @@ abline(v=outPrincipeSiler$mean$b1,col="red")
 hist(outPrincipeSiler$sims.list$b3, main="b3",xlab="",col="grey")
 abline(v=outPrincipeSiler$mean$b3,col="red")
 ###############################################################################
-par(mfrow=c(1,1))
+## calculate survival lx-1/lx
+## ploting
+######################################
 
+a=outPrincipeE$mean$a
+a2=outPrincipeE$mean$a2
+PrincipeSConst<-a*exp(-a2*dat$Age)
+
+outPrincipeSen$DIC
+a=outPrincipeSen$mean$a
+a2=outPrincipeSen$mean$a2
+b1=outPrincipeSen$mean$b1
+b3=outPrincipeSen$mean$b3
+SSen<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))
+
+outPrincipeMat$DIC
+a=outPrincipeMat$mean$a
+a1=outPrincipeMat$mean$a1
+a2=outPrincipeMat$mean$a2
+b1=outPrincipeMat$mean$b1
+SMat<-a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
+
+a=outPrincipeSiler$mean$a
+a1=outPrincipeSiler$mean$a1
+a2=outPrincipeSiler$mean$a2
+a3=outPrincipeSiler$mean$a3
+b1=outPrincipeSiler$mean$b1
+b3=outPrincipeSiler$mean$b3
+SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
+############################
+PrincipepConst=(PrincipeSConst[1:13+1])/(PrincipeSConst[1:13])
+pSen=(SSen[1:13+1])/(SSen[1:13])
+pMat=(SMat[1:13+1])/(SMat[1:13])
+pSiler=(SSiler[1:13+1])/(SSiler[1:13])
+plot(0:12,PrincipepConst,ylim=c(0,1),type="l",xlab="Age",ylab="Survival",main="Principe")
+lines(0:12,pSen,lty=2)
+lines(0:12,pMat,lty=3)
+lines(0:12,pSiler,lty=4)
+######################################
+#########################################################################################################################################
+
+## Morogoro
+
+win.data<-list(data=dat$Morogoro,Age=dat$Age,nobs=length(dat$Morogoro))
+inits<-function()
+  list(a=rnorm(1,30),a2=rnorm(1,0),data.sd=runif(1,1,30))
+params<-c("a","a2","data.var")
+nc=3
+ni=10000
+nb=1000
+nt=1
+outMorogoroE<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+                   model.file="allmodel.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                   n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+plot(outMorogoroE)
+hist(outMorogoroE$sims.list$a2)
+
+######################################################
+# mat
+##
+
+win.data<-list(data=dat$Morogoro,Age=dat$Age,nobs=length(dat$Morogoro))
+inits<-function()
+  list(a=rnorm(1,14),a1=rnorm(1,0.1),a2=rnorm(1,0.1),b1=rnorm(1,0.1),data.sd=runif(1,0,30))
+params<-c("a","a1","a2","b1","data.var")
+
+nc=3
+ni=10000
+nb=1000
+nt=1
+outMorogoroMat<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+                     model.file="allmodelMature.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                     n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+
+plot(outMorogoroMat)
+hist(outMorogoroMat$sims.list$a2)
+outMorogoroMat
+
+################################################################
+
+win.data<-list(data=dat$Morogoro,Age=dat$Age,nobs=length(dat$Morogoro))
+inits<-function()
+  list(a=rnorm(1,11),a3=rnorm(1,-0.01),a2=rnorm(1,0.1),b3=rnorm(1,-0.01),data.sd=runif(1,0,30))
+params<-c("a","a3","a2","b3","data.var")
+
+nc=3
+ni=10000
+nb=1000
+nt=10
+outMorogoroSen<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+                     model.file="allmodelSen.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                     n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+
+plot(outMorogoroSen)
+outMorogoroSen
+
+###############################################################
+## both
+
+win.data<-list(data=dat$Morogoro,Age=dat$Age,nobs=length(dat$Morogoro))
+inits<-function()
+  list(a=rnorm(1,10),a1=rnorm(1,0.1),a2=rnorm(1,0.1),a3=rnorm(1,-0.01),b1=rnorm(1,-0.01),b3=rnorm(1,-10),data.sd=runif(1,1,30))
+params<-c("a","a1","a2","a3","b1","b3","data.var")
+nc=3
+ni=10000
+nb=1000
+nt=10
+outMorogoroSiler<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+                       model.file="allmodelSiler.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                       n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+
+
+######################################
 outMorogoroE$DIC
 a=outMorogoroE$mean$a
 a2=outMorogoroE$mean$a2
 
-plot(0:13,a*exp(-a2*dat$Age),ylab="",xlab="Age",type="l",ylim=c(0,30))
+plot(0:13,a*exp(-a2*dat$Age),ylab="Count",xlab="Age",type="l",ylim=c(0,50),main="Morogoro")
 ## plot CI
 predictions<-array(dim=c(length(dat$Age),length(outMorogoroE$sims.list$a)))
 for (i in 1:length(dat$Age)){
@@ -2107,10 +805,10 @@ polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = 
 outMorogoroSen$DIC
 a=outMorogoroSen$mean$a
 a2=outMorogoroSen$mean$a2
-a3=outMorogoroSen$mean$a3
+b1=outMorogoroSen$mean$b1
 b3=outMorogoroSen$mean$b3
 
-lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age))),lty=2)
+lines(0:13,mean(outMorogoroSen$sims.list$a)*exp(-mean(outMorogoroSen$sims.list$a2)*dat$Age)*exp((-mean(outMorogoroSen$sims.list$a3)/mean(outMorogoroSen$sims.list$b3))*(1-exp(mean(outMorogoroSen$sims.list$b3)*dat$Age))),lty=2)
 ## plot CI
 predictions<-array(dim=c(length(dat$Age),length(outMorogoroSen$sims.list$a)))
 for (i in 1:length(dat$Age)){
@@ -2162,7 +860,7 @@ polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = 
 legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
        lty=1:4,bty="n")
 
-points(dat$Age,dat$Morogoro,bg="black",pch=21)
+points(dat$Age,Morogoro,bg="black",pch=21)
 
 min=min(outMorogoroE$DIC,outMorogoroMat$DIC,outMorogoroSen$DIC,outMorogoroSiler$DIC)
 barplot(c(outMorogoroE$DIC-min,outMorogoroMat$DIC-min,outMorogoroSen$DIC-min,outMorogoroSiler$DIC-min),
@@ -2183,13 +881,121 @@ hist(outMorogoroSiler$sims.list$b3, main="b3",xlab="",col="grey")
 abline(v=outMorogoroSiler$mean$b3,col="red")
 
 ###############################################################################
-par(mfrow=c(1,1))
+## calculate survival lx-1/lx
+## ploting
+######################################
 
+a=outMorogoroE$mean$a
+a2=outMorogoroE$mean$a2
+MorogoroSConst<-a*exp(-a2*dat$Age)
+
+outMorogoroSen$DIC
+a=outMorogoroSen$mean$a
+a2=outMorogoroSen$mean$a2
+b1=outMorogoroSen$mean$b1
+b3=outMorogoroSen$mean$b3
+SSen<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))
+
+outMorogoroMat$DIC
+a=outMorogoroMat$mean$a
+a1=outMorogoroMat$mean$a1
+a2=outMorogoroMat$mean$a2
+b1=outMorogoroMat$mean$b1
+SMat<-a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
+
+a=outMorogoroSiler$mean$a
+a1=outMorogoroSiler$mean$a1
+a2=outMorogoroSiler$mean$a2
+a3=outMorogoroSiler$mean$a3
+b1=outMorogoroSiler$mean$b1
+b3=outMorogoroSiler$mean$b3
+SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
+############################
+MorogoropConst=(MorogoroSConst[1:13+1])/(MorogoroSConst[1:13])
+pSen=(SSen[1:13+1])/(SSen[1:13])
+pMat=(SMat[1:13+1])/(SMat[1:13])
+pSiler=(SSiler[1:13+1])/(SSiler[1:13])
+plot(0:12,MorogoropConst,ylim=c(0,1),type="l",xlab="Age",ylab="Survival",main="Morogoro")
+lines(0:12,pSen,lty=2)
+lines(0:12,pMat,lty=3)
+lines(0:12,pSiler,lty=4)
+######################################
+
+## DarEsSalaam
+
+win.data<-list(data=dat$DarEsSalaam,Age=dat$Age,nobs=length(dat$DarEsSalaam))
+inits<-function()
+  list(a=rnorm(1,30),a2=rnorm(1,0),data.sd=runif(1,1,30))
+params<-c("a","a2","data.var")
+nc=3
+ni=10000
+nb=1000
+nt=1
+outDarEsSalaamE<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+                      model.file="allmodel.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                      n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+plot(outDarEsSalaamE)
+hist(outDarEsSalaamE$sims.list$a2)
+
+######################################################
+# mat
+
+win.data<-list(data=dat$DarEsSalaam,Age=dat$Age,nobs=length(dat$DarEsSalaam))
+inits<-function()
+  list(a=rnorm(1,9),a1=rnorm(1,1),a2=rnorm(1,0.1),b1=rnorm(1,1),data.sd=runif(1,0,30))
+params<-c("a","a1","a2","b1","data.var")
+
+nc=3
+ni=10000
+nb=1000
+nt=1
+outDarEsSalaamMat<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+                        model.file="allmodelMature.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                        n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+
+plot(outDarEsSalaamMat)
+hist(outDarEsSalaamMat$sims.list$a2)
+outDarEsSalaamMat
+
+################################################################
+
+win.data<-list(data=dat$DarEsSalaam,Age=dat$Age,nobs=length(dat$DarEsSalaam))
+inits<-function()
+  list(a=rnorm(1,7.4),a3=rnorm(1,-0.01),a2=rnorm(1,0.1),b3=rnorm(1,-0.1),data.sd=runif(1,0,30))
+params<-c("a","a3","a2","b3","data.var")
+
+nc=3
+ni=10000
+nb=1000
+nt=10
+outDarEsSalaamSen<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+                        model.file="allmodelSen.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                        n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+
+plot(outDarEsSalaamSen)
+outDarEsSalaamSen
+
+###############################################################
+## both
+
+win.data<-list(data=dat$DarEsSalaam,Age=dat$Age,nobs=length(dat$DarEsSalaam))
+inits<-function()
+  list(a=rnorm(1,10),a1=rnorm(1,0.1),a2=rnorm(1,0.1),a3=rnorm(1,-0.01),b1=rnorm(1,-0.01),b3=rnorm(1,-10),data.sd=runif(1,1,30))
+params<-c("a","a1","a2","a3","b1","b3","data.var")
+nc=3
+ni=10000
+nb=1000
+nt=10
+outDarEsSalaamSiler<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+                          model.file="allmodelSiler.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+                          n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+
+######################################
 outDarEsSalaamE$DIC
 a=outDarEsSalaamE$mean$a
 a2=outDarEsSalaamE$mean$a2
 
-plot(0:13,a*exp(-a2*dat$Age),ylab="",xlab="Age",type="l",ylim=c(0,15))
+plot(0:13,a*exp(-a2*dat$Age),ylab="Count",xlab="Age",type="l",ylim=c(0,30),main="Dar Es Salaam")
 ## plot CI
 predictions<-array(dim=c(length(dat$Age),length(outDarEsSalaamE$sims.list$a)))
 for (i in 1:length(dat$Age)){
@@ -2204,7 +1010,7 @@ polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = 
 outDarEsSalaamSen$DIC
 a=outDarEsSalaamSen$mean$a
 a2=outDarEsSalaamSen$mean$a2
-a3=outDarEsSalaamSen$mean$a3
+b1=outDarEsSalaamSen$mean$b1
 b3=outDarEsSalaamSen$mean$b3
 
 lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age))),lty=2)
@@ -2259,7 +1065,7 @@ polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = 
 legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
        lty=1:4,bty="n")
 
-points(dat$Age,dat$DarEsSalaam,bg="black",pch=21)
+points(dat$Age,DarEsSalaam,bg="black",pch=21)
 
 min=min(outDarEsSalaamE$DIC,outDarEsSalaamMat$DIC,outDarEsSalaamSen$DIC,outDarEsSalaamSiler$DIC)
 barplot(c(outDarEsSalaamE$DIC-min,outDarEsSalaamMat$DIC-min,outDarEsSalaamSen$DIC-min,outDarEsSalaamSiler$DIC-min),
@@ -2279,277 +1085,14 @@ abline(v=outDarEsSalaamSiler$mean$b1,col="red")
 hist(outDarEsSalaamSiler$sims.list$b3, main="b3",xlab="",col="grey")
 abline(v=outDarEsSalaamSiler$mean$b3,col="red")
 
-######################################
-par(mfrow=c(1,1))
-outBiokoE$DIC
-a=outBiokoE$mean$a
-a2=outBiokoE$mean$a2
-
-plot(0:13,a*exp(-a2*dat$Age),ylab="",xlab="Age",type="l",ylim=c(0,100))
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outBiokoE$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outBiokoE$sims.list$a*exp(-outBiokoE$sims.list$a2*dat$Age[i])
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey")
-points(0:13,UPB,type="l",col="grey") # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-outBiokoSen$DIC
-a=outBiokoSen$mean$a
-a2=outBiokoSen$mean$a2
-b1=outBiokoSen$mean$b1
-b3=outBiokoSen$mean$b3
-
-lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age))),lty=2)
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outBiokoSen$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outBiokoSen$sims.list$a*exp(-outBiokoSen$sims.list$a2*dat$Age[i])*exp((-outBiokoSen$sims.list$a3/outBiokoSen$sims.list$b3)*(1-exp(outBiokoSen$sims.list$b3*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey",lty=2)
-points(0:13,UPB,type="l",col="grey",lty=2) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-outBiokoMat$DIC
-a=outBiokoMat$mean$a
-a1=outBiokoMat$mean$a1
-a2=outBiokoMat$mean$a2
-b1=outBiokoMat$mean$b1
-
-lines(0:13,a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=3)
-predictions<-array(dim=c(length(dat$Age),length(outBiokoMat$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outBiokoMat$sims.list$a*exp(-outBiokoMat$sims.list$a2*dat$Age[i])*exp((-outBiokoMat$sims.list$a1/outBiokoMat$sims.list$b1)*(1-exp(-outBiokoMat$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey",lty=3)
-points(0:13,UPB,type="l",col="grey",lty=3) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-outBiokoSiler$DIC
-
-a=outBiokoSiler$mean$a
-a1=outBiokoSiler$mean$a1
-a2=outBiokoSiler$mean$a2
-a3=outBiokoSiler$mean$a3
-b1=outBiokoSiler$mean$b1
-b3=outBiokoSiler$mean$b3
-
-lines(0:13,a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age))),lty=4)
-predictions<-array(dim=c(length(dat$Age),length(outBiokoSiler$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outBiokoSiler$sims.list$a*exp(-outBiokoSiler$sims.list$a2*dat$Age[i])*exp((-outBiokoSiler$sims.list$a3/outBiokoSiler$sims.list$b3)*(1-exp(outBiokoSiler$sims.list$b3*dat$Age[i])))*exp((-outBiokoSiler$sims.list$a1/outBiokoSiler$sims.list$b1)*(1-exp(-outBiokoSiler$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:13,LPB,type="l",col="grey",lty=4)
-points(0:13,UPB,type="l",col="grey",lty=4) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
-       lty=1:4,bty="n")
-
-points(dat$Age,dat$Bioko,bg="black",pch=21)
-
-min=min(outBiokoE$DIC,outBiokoMat$DIC,outBiokoSen$DIC,outBiokoSiler$DIC)
-barplot(c(outBiokoE$DIC-min,outBiokoMat$DIC-min,outBiokoSen$DIC-min,outBiokoSiler$DIC-min),
-        names.arg=c("Constant","Maturation","Senescence","Both"))
-
-par(mfrow=c(3,2))
-hist(outBiokoSiler$sims.list$a, main="a",xlab="",col="grey")
-abline(v=outBiokoSiler$mean$a,col="red")
-hist(outBiokoSiler$sims.list$a1, main="a1",xlab="",col="grey")
-abline(v=outBiokoSiler$mean$a1,col="red")
-hist(outBiokoSiler$sims.list$a2, main="a2",xlab="",col="grey")
-abline(v=outBiokoSiler$mean$a2,col="red")
-hist(outBiokoSiler$sims.list$a3, main="a3",xlab="",col="grey")
-abline(v=outBiokoSiler$mean$a3,col="red")
-hist(outBiokoSiler$sims.list$b1, main="b1",xlab="",col="grey")
-abline(v=outBiokoSiler$mean$b1,col="red")
-hist(outBiokoSiler$sims.list$b3, main="b3",xlab="",col="grey")
-abline(v=outBiokoSiler$mean$b3,col="red")
-
 ###############################################################################
-## calculate survival lx-1/lx
-## ploting
-######################################
-par(omi=c(1,1,0.5,0.5))
-par(mai=c(0.8,0.8,0.8,0.8))
-
-par(mfrow=c(2,3))
-
-#################
-a=outGhanaE$mean$a
-a2=outGhanaE$mean$a2
-SConst<-a*exp(-a2*dat$Age)
-
-outGhanaSen$DIC
-a=outGhanaSen$mean$a
-a2=outGhanaSen$mean$a2
-a3=outGhanaSen$mean$a3
-b3=outGhanaSen$mean$b3
-SSen<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))
-
-outGhanaMat$DIC
-a=outGhanaMat$mean$a
-a1=outGhanaMat$mean$a1
-a2=outGhanaMat$mean$a2
-b1=outGhanaMat$mean$b1
-SMat<-a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-
-a=outGhanaSiler$mean$a
-a1=outGhanaSiler$mean$a1
-a2=outGhanaSiler$mean$a2
-a3=outGhanaSiler$mean$a3
-b1=outGhanaSiler$mean$b1
-b3=outGhanaSiler$mean$b3
-SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-############################
-pConst=(SConst[1:13+1])/(SConst[1:13])
-pSen=(SSen[1:13+1])/(SSen[1:13])
-pMat=(SMat[1:13+1])/(SMat[1:13])
-pSiler=(SSiler[1:13+1])/(SSiler[1:13])
-#par(mfrow=c(1,1))
-plot(0:12,pConst,ylim=c(0,1),type="l",xlab="",ylab="",main="Ghana")
-lines(0:12,pSen,lty=2)
-lines(0:12,pMat,lty=3)
-lines(0:12,pSiler,lty=4)
-
-##
-
-mtext("Survival",side=2,outer=T)
-mtext("Age",side=1,outer=T)
-
-#legend("bottomright",legend=c("Constant","Maturation","Senescence","Both"),
-#       lty=1:4,bty="n")
-
-## calculate survival lx-1/lx
-## ploting
-######################################
-
-a=outSaoTomeE$mean$a
-a2=outSaoTomeE$mean$a2
-SConst<-a*exp(-a2*dat$Age)
-
-outSaoTomeSen$DIC
-a=outSaoTomeSen$mean$a
-a2=outSaoTomeSen$mean$a2
-b1=outSaoTomeSen$mean$b1
-b3=outSaoTomeSen$mean$b3
-SSen<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))
-
-outSaoTomeMat$DIC
-a=outSaoTomeMat$mean$a
-a1=outSaoTomeMat$mean$a1
-a2=outSaoTomeMat$mean$a2
-b1=outSaoTomeMat$mean$b1
-SMat<-a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-
-a=outSaoTomeSiler$mean$a
-a1=outSaoTomeSiler$mean$a1
-a2=outSaoTomeSiler$mean$a2
-a3=outSaoTomeSiler$mean$a3
-b1=outSaoTomeSiler$mean$b1
-b3=outSaoTomeSiler$mean$b3
-SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-############################
-pConst=(SConst[1:13+1])/(SConst[1:13])
-pSen=(SSen[1:13+1])/(SSen[1:13])
-pMat=(SMat[1:13+1])/(SMat[1:13])
-pSiler=(SSiler[1:13+1])/(SSiler[1:13])
-plot(0:12,pConst,ylim=c(0,1),type="l",xlab="",ylab="",main="Sao Tome")
-lines(0:12,pSen,lty=2)
-lines(0:12,pMat,lty=3)
-lines(0:12,pSiler,lty=4)
-## ploting
-######################################
-
-a=outPrincipeE$mean$a
-a2=outPrincipeE$mean$a2
-SConst<-a*exp(-a2*dat$Age)
-
-outPrincipeSen$DIC
-a=outPrincipeSen$mean$a
-a2=outPrincipeSen$mean$a2
-b1=outPrincipeSen$mean$b1
-b3=outPrincipeSen$mean$b3
-SSen<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))
-
-outPrincipeMat$DIC
-a=outPrincipeMat$mean$a
-a1=outPrincipeMat$mean$a1
-a2=outPrincipeMat$mean$a2
-b1=outPrincipeMat$mean$b1
-SMat<-a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-
-a=outPrincipeSiler$mean$a
-a1=outPrincipeSiler$mean$a1
-a2=outPrincipeSiler$mean$a2
-a3=outPrincipeSiler$mean$a3
-b1=outPrincipeSiler$mean$b1
-b3=outPrincipeSiler$mean$b3
-SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-############################
-pConst=(SConst[1:13+1])/(SConst[1:13])
-pSen=(SSen[1:13+1])/(SSen[1:13])
-pMat=(SMat[1:13+1])/(SMat[1:13])
-pSiler=(SSiler[1:13+1])/(SSiler[1:13])
-plot(0:12,pConst,ylim=c(0,1),type="l",xlab="",ylab="",main="Principe")
-lines(0:12,pSen,lty=2)
-lines(0:12,pMat,lty=3)
-lines(0:12,pSiler,lty=4)
-######################################
-## calculate survival lx-1/lx
-## ploting
-######################################
-
-a=outMorogoroE$mean$a
-a2=outMorogoroE$mean$a2
-SConst<-a*exp(-a2*dat$Age)
-
-outMorogoroSen$DIC
-a=outMorogoroSen$mean$a
-a2=outMorogoroSen$mean$a2
-b1=outMorogoroSen$mean$b1
-b3=outMorogoroSen$mean$b3
-SSen<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))
-
-outMorogoroMat$DIC
-a=outMorogoroMat$mean$a
-a1=outMorogoroMat$mean$a1
-a2=outMorogoroMat$mean$a2
-b1=outMorogoroMat$mean$b1
-SMat<-a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-
-a=outMorogoroSiler$mean$a
-a1=outMorogoroSiler$mean$a1
-a2=outMorogoroSiler$mean$a2
-a3=outMorogoroSiler$mean$a3
-b1=outMorogoroSiler$mean$b1
-b3=outMorogoroSiler$mean$b3
-SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-############################
-pConst=(SConst[1:13+1])/(SConst[1:13])
-pSen=(SSen[1:13+1])/(SSen[1:13])
-pMat=(SMat[1:13+1])/(SMat[1:13])
-pSiler=(SSiler[1:13+1])/(SSiler[1:13])
-plot(0:12,pConst,ylim=c(0,1),type="l",xlab="",ylab="",main="Morogoro")
-lines(0:12,pSen,lty=2)
-lines(0:12,pMat,lty=3)
-lines(0:12,pSiler,lty=4)
 ## calculate survival lx-1/lx
 ## ploting
 ######################################
 
 a=outDarEsSalaamE$mean$a
 a2=outDarEsSalaamE$mean$a2
-SConst<-a*exp(-a2*dat$Age)
+DarEsSalaamSConst<-a*exp(-a2*dat$Age)
 
 outDarEsSalaamSen$DIC
 a=outDarEsSalaamSen$mean$a
@@ -2573,143 +1116,62 @@ b1=outDarEsSalaamSiler$mean$b1
 b3=outDarEsSalaamSiler$mean$b3
 SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
 ############################
-pConst=(SConst[1:13+1])/(SConst[1:13])
+DarEsSalaampConst=(DarEsSalaamSConst[1:13+1])/(DarEsSalaamSConst[1:13])
 pSen=(SSen[1:13+1])/(SSen[1:13])
 pMat=(SMat[1:13+1])/(SMat[1:13])
 pSiler=(SSiler[1:13+1])/(SSiler[1:13])
-plot(0:12,pConst,ylim=c(0,1),type="l",xlab="",ylab="",main="Dar Es Salaam")
-lines(0:12,pSen,lty=2)
-lines(0:12,pMat,lty=3)
-lines(0:12,pSiler,lty=4)
-
-plot(1, type="n", axes=F, xlab="", ylab="",main="Mortality risk")
-legend("center",legend=c("Constant","Maturation","Senescence","Both"),
-              lty=1:4,bty="n",cex=1.2)
-## below for Bioko and DIC table
-
-## calculate survival lx-1/lx
-## ploting
-######################################
-
-a=outBiokoE$mean$a
-a2=outBiokoE$mean$a2
-SConst<-a*exp(-a2*dat$Age)
-
-outBiokoSen$DIC
-a=outBiokoSen$mean$a
-a2=outBiokoSen$mean$a2
-b1=outBiokoSen$mean$b1
-b3=outBiokoSen$mean$b3
-SSen<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))
-
-outBiokoMat$DIC
-a=outBiokoMat$mean$a
-a1=outBiokoMat$mean$a1
-a2=outBiokoMat$mean$a2
-b1=outBiokoMat$mean$b1
-SMat<-a*exp(-a2*dat$Age)*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-
-a=outBiokoSiler$mean$a
-a1=outBiokoSiler$mean$a1
-a2=outBiokoSiler$mean$a2
-a3=outBiokoSiler$mean$a3
-b1=outBiokoSiler$mean$b1
-b3=outBiokoSiler$mean$b3
-SSiler<-a*exp(-a2*dat$Age)*exp((-a3/b3)*(1-exp(b3*dat$Age)))*exp((-a1/b1)*(1-exp(-b1*dat$Age)))
-############################
-pConst=(SConst[1:13+1])/(SConst[1:13])
-pSen=(SSen[1:13+1])/(SSen[1:13])
-pMat=(SMat[1:13+1])/(SMat[1:13])
-pSiler=(SSiler[1:13+1])/(SSiler[1:13])
-plot(0:12,pConst,ylim=c(0,1),type="l",xlab="Age",ylab="Survival")
+plot(0:12,DarEsSalaampConst,ylim=c(0,1),type="l",xlab="Age",ylab="Survival",main="Dar Es Salaam")
 lines(0:12,pSen,lty=2)
 lines(0:12,pMat,lty=3)
 lines(0:12,pSiler,lty=4)
 ######################################
 
+##########################################################
+#
 
-## DIC table
+## plot expectation
+## survival vs population size
+## additive 0.9 constant across N
+## compensatory declines across N
 
-GhanaDIC<-c(outGhanaE$DIC,outGhanaMat$DIC,outGhanaSen$DIC,outGhanaSiler$DIC)
-PrincipeDIC<-c(outPrincipeE$DIC,outPrincipeMat$DIC,outPrincipeSen$DIC,outPrincipeSiler$DIC)
-DarEsSalaamDIC<-c(outDarEsSalaamE$DIC,outDarEsSalaamMat$DIC,outDarEsSalaamSen$DIC,outDarEsSalaamSiler$DIC)
-MorogoroDIC<-c(outMorogoroE$DIC,outMorogoroMat$DIC,outMorogoroSen$DIC,outMorogoroSiler$DIC)
-SaoTomeDIC<-c(outSaoTomeE$DIC,outSaoTomeMat$DIC,outSaoTomeSen$DIC,outSaoTomeSiler$DIC)
+plot(c(0,100000), c(0,1), ylab = "Survival", xlab = "Population size",type="n",xaxt="n")
+## the x- and y-axis, and an integer grid
+lines(x=c(0,100000),y=c(0.8,0.8),lty=2,col=1)
+lines(x=c(0,100000),y=c(0.8,0),lty=2,col=2)
+mtext("High",side=1,at=100000)
+mtext("Low",side=1,at=0)
+legend("left",legend=c("Additive","Compensatory"),
+       lty=c(2,2),bty="n",col=1:2)
+## add data
+points(x=c(100000),y=c(GhanapConst[1]),pch=1)
+points(x=c(10000),y=c(MorogoropConst[1]),pch=2)
+points(x=c(5000),y=c(SaoTomepConst[1]),pch=3)
+points(x=c(20000),y=c(PrincipepConst[1]),pch=4)
+points(x=c(6000),y=c(DarEsSalaampConst[1]),pch=5)
 
-DICtable<-round(cbind(GhanaDIC,
-                PrincipeDIC,
-                DarEsSalaamDIC,
-                MorogoroDIC,
-                SaoTomeDIC),2)
-row.names(DICtable)<-c("Constant","Maturation","Senescence","Both")
-colnames(DICtable)<-c("Ghana","Principe","Dar Es Salaam","Morogoro","Sao Tome")
+legend("bottomleft",legend=c("Ghana","Morogoro","Sao Tome","Principe","Dar Es Salaam"),
+       pch=1:5,bty="n")
 
-## parameter table
-GhanaParA<-c(outGhanaE$mean$a,outGhanaMat$mean$a,outGhanaSen$mean$a,outGhanaSiler$mean$a)
-GhanaParA1<-c("NA",outGhanaMat$mean$a1,"NA",outGhanaSiler$mean$a1)
-GhanaParA2<-c(outGhanaE$mean$a2,outGhanaMat$mean$a2,outGhanaSen$mean$a2,outGhanaSiler$mean$a2)
-GhanaParA3<-c("NA","NA",outGhanaSen$mean$a3,outGhanaSiler$mean$a3)
-GhanaParB1<-c("NA",outGhanaMat$mean$b1,"NA",outGhanaSiler$mean$b1)
-GhanaParB3<-c("NA","NA",outGhanaSen$mean$a3,outGhanaSiler$mean$a3)
+## survival vs harvest
+## additive decline
+## conpensatory - const till xs
 
-PrincipeParA<-c(outPrincipeE$mean$a,outPrincipeMat$mean$a,outPrincipeSen$mean$a,outPrincipeSiler$mean$a)
-PrincipeParA1<-c("NA",outPrincipeMat$mean$a1,"NA",outPrincipeSiler$mean$a1)
-PrincipeParA2<-c(outPrincipeE$mean$a2,outPrincipeMat$mean$a2,outPrincipeSen$mean$a2,outPrincipeSiler$mean$a2)
-PrincipeParA3<-c("NA","NA",outPrincipeSen$mean$a3,outPrincipeSiler$mean$a3)
-PrincipeParB1<-c("NA",outPrincipeMat$mean$b1,"NA",outPrincipeSiler$mean$b1)
-PrincipeParB3<-c("NA","NA",outPrincipeSen$mean$a3,outPrincipeSiler$mean$a3)
+plot(c(0,1), c(0,1), ylab = "Survival", xlab = "Harvest",type="n",xaxt="n")
+## the x- and y-axis, and an integer grid
+lines(x=c(0,1),y=c(0.8,0),lty=2,col=1)
+lines(x=c(0,0.5),y=c(0.8,0.8),lty=2,col=2)
+lines(x=c(0.5,1),y=c(0.8,0.5),lty=2,col=2)
+mtext("High",side=1,at=1)
+mtext("Low",side=1,at=0)
+legend("left",legend=c("Additive","Compensatory"),
+       lty=c(2,2),bty="n",col=1:2)
 
-DarEsSalaamParA<-c(outDarEsSalaamE$mean$a,outDarEsSalaamMat$mean$a,outDarEsSalaamSen$mean$a,outDarEsSalaamSiler$mean$a)
-DarEsSalaamParA1<-c("NA",outDarEsSalaamMat$mean$a1,"NA",outDarEsSalaamSiler$mean$a1)
-DarEsSalaamParA2<-c(outDarEsSalaamE$mean$a2,outDarEsSalaamMat$mean$a2,outDarEsSalaamSen$mean$a2,outDarEsSalaamSiler$mean$a2)
-DarEsSalaamParA3<-c("NA","NA",outDarEsSalaamSen$mean$a3,outDarEsSalaamSiler$mean$a3)
-DarEsSalaamParB1<-c("NA",outDarEsSalaamMat$mean$b1,"NA",outDarEsSalaamSiler$mean$b1)
-DarEsSalaamParB3<-c("NA","NA",outDarEsSalaamSen$mean$a3,outDarEsSalaamSiler$mean$a3)
+## add data
+points(x=c(0.5),y=c(GhanapConst[1]),pch=1)
+points(x=c(0),y=c(MorogoropConst[1]),pch=2)
+points(x=c(1),y=c(SaoTomepConst[1]),pch=3)
+points(x=c(0),y=c(PrincipepConst[1]),pch=4)
+points(x=c(0),y=c(DarEsSalaampConst[1]),pch=5)
 
-MorogoroParA<-c(outMorogoroE$mean$a,outMorogoroMat$mean$a,outMorogoroSen$mean$a,outMorogoroSiler$mean$a)
-MorogoroParA1<-c("NA",outMorogoroMat$mean$a1,"NA",outMorogoroSiler$mean$a1)
-MorogoroParA2<-c(outMorogoroE$mean$a2,outMorogoroMat$mean$a2,outMorogoroSen$mean$a2,outMorogoroSiler$mean$a2)
-MorogoroParA3<-c("NA","NA",outMorogoroSen$mean$a3,outMorogoroSiler$mean$a3)
-MorogoroParB1<-c("NA",outMorogoroMat$mean$b1,"NA",outMorogoroSiler$mean$b1)
-MorogoroParB3<-c("NA","NA",outMorogoroSen$mean$a3,outMorogoroSiler$mean$a3)
-
-SaoTomeParA<-c(outSaoTomeE$mean$a,outSaoTomeMat$mean$a,outSaoTomeSen$mean$a,outSaoTomeSiler$mean$a)
-SaoTomeParA1<-c("NA",outSaoTomeMat$mean$a1,"NA",outSaoTomeSiler$mean$a1)
-SaoTomeParA2<-c(outSaoTomeE$mean$a2,outSaoTomeMat$mean$a2,outSaoTomeSen$mean$a2,outSaoTomeSiler$mean$a2)
-SaoTomeParA3<-c("NA","NA",outSaoTomeSen$mean$a3,outSaoTomeSiler$mean$a3)
-SaoTomeParB1<-c("NA",outSaoTomeMat$mean$b1,"NA",outSaoTomeSiler$mean$b1)
-SaoTomeParB3<-c("NA","NA",outSaoTomeSen$mean$a3,outSaoTomeSiler$mean$a3)
-
-Partable<-cbind(
-  cbind(GhanaParA,
-                      GhanaParA1,
-                      GhanaParA2,
-                      GhanaParA3,
-                      GhanaParB1,
-                      GhanaParB3),
-  cbind(PrincipeParA,
-                      PrincipeParA1,
-                      PrincipeParA2,
-                      PrincipeParA3,
-                      PrincipeParB1,
-                      PrincipeParB3),
-  cbind(DarEsSalaamParA,
-                      DarEsSalaamParA1,
-                      DarEsSalaamParA2,
-                      DarEsSalaamParA3,
-                      DarEsSalaamParB1,
-                      DarEsSalaamParB3),
-  cbind(MorogoroParA,
-                      MorogoroParA1,
-                      MorogoroParA2,
-                      MorogoroParA3,
-                      MorogoroParB1,
-                      MorogoroParB3),
-  cbind(SaoTomeParA,
-                      SaoTomeParA1,
-                      SaoTomeParA2,
-                      SaoTomeParA3,
-                      SaoTomeParB1,
-                      SaoTomeParB3))
-row.names(Partable)<-c("Constant","Maturation","Senescence","Both")
-write.table(Partable,file="params.csv",sep="\t",row.names=T,col.names=T)
+legend("bottomleft",legend=c("Ghana","Morogoro","Sao Tome","Principe","Dar Es Salaam"),
+       pch=1:5,bty="n")
