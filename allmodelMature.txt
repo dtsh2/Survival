@@ -1,0 +1,18 @@
+
+    model{
+    a~dunif(0,1000)
+    a1~dnorm(0,100)
+    a2~dnorm(0,100)
+    b1~dnorm(0,100)
+    
+    precision<-1/data.var
+    data.var<-data.sd*data.sd
+    data.sd~dunif(0,100)
+    
+    for (i in 1:nobs){
+    data[i]~dnorm(mu[i],precision)
+    mu[i]<-a*exp(-a2*Age[i])*exp((-a1/b1)*(1-exp(-b1*Age[i])))
+    }
+    }
+    
+    

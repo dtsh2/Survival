@@ -1,0 +1,20 @@
+
+    model{
+    a~dunif(0,1000)
+    a1~dnorm(0,100)
+    a2~dnorm(0,100)
+    a3~dnorm(0,100)
+    b1~dnorm(0,100)
+    b3~dnorm(0,100)
+    
+    precision<-1/ghana.var
+    ghana.var<-ghana.sd*ghana.sd
+    ghana.sd~dunif(0,400)
+    
+    for (i in 1:nobs){
+    Ghana[i]~dnorm(mu[i],precision)
+    mu[i]<-a*exp(-a2*Age[i])*exp((-a3/b3)*(1-exp(b3*Age[i])))*exp((-a1/b1)*(1-exp(-b1*Age[i])))
+    }
+    }
+    
+    
