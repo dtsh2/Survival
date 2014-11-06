@@ -6,17 +6,22 @@ initial values loaded and chain initialized but another chain contains uninitial
 model is initialized
 model is already initialized
 model is updating
-1000 updates took 0 s
-inference can not be made when sampler is in adaptive phase
-inference can not be made when sampler is in adaptive phase
-inference can not be made when sampler is in adaptive phase
-inference can not be made when sampler is in adaptive phase
-inference can not be made when sampler is in adaptive phase
-inference can not be made when sampler is in adaptive phase
-DIC can not be monitored when model in adapting phase
+1000 updates took 21 s
 model is updating
-9000 updates took 8 s
+9000 updates took 197 s
 CODA files written
-no monitors set
-DIC monitor not set
+Summary statistics
+		mean	sd	val2.5pc	median	val97.5pc	sample
+	a	17.93	3.249	11.76	17.84	24.45	27000
+	a1	0.03782	0.08048	-0.1282	0.03918	0.1939	27000
+	a2	0.03896	0.084	-0.1284	0.04042	0.1998	27000
+	a3	-0.03868	0.0807	-0.1953	-0.03999	0.1289	27000
+	b1	0.006247	0.09471	-0.1726	0.003539	0.1982	27000
+	b3	-0.005979	0.09511	-0.1974	-0.002684	0.1745	27000
+	data.var	23.2	12.07	9.564	20.29	57.88	27000
+	deviance	81.29	2.964	77.77	80.55	88.99	27000
+Deviance information
+	Dbar	Dhat	DIC	pD	
+data	81.29	78.63	83.95	2.665
+total	81.29	78.63	83.95	2.665
 History
