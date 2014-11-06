@@ -1020,3 +1020,58 @@ points(x=c(0),y=c(DarEsSalaampConst[1]),pch=5)
 legend("bottomleft",legend=c("Ghana","Morogoro","Sao Tome","Principe","Dar Es Salaam"),
        pch=1:5,bty="n")
 dev.off()
+
+#### save results for tables
+## const
+write.table(x=outGhanaE$summary,file="GhanaConst.csv",sep=",")
+write.table(x=outGhanaE$DIC,file="GhanaConstDIC.csv",sep=",")
+write.table(x=outPrincipeE$summary,file="PrincipeConst.csv",sep=",")
+write.table(x=outPrincipeE$DIC,file="PrincipeConstDIC.csv",sep=",")
+write.table(x=outSaoTomeE$summary,file="SaoTomeConst.csv",sep=",")
+write.table(x=outSaoTomeE$DIC,file="SaoTomeConstDIC.csv",sep=",")
+write.table(x=outMorogoroE$summary,file="MorogoroConst.csv",sep=",")
+write.table(x=outMorogoroE$DIC,file="MorogoroConstDIC.csv",sep=",")
+write.table(x=outDarEsSalaamE$summary,file="DarEsSalaamConst.csv",sep=",")
+write.table(x=outDarEsSalaamE$DIC,file="DarEsSalaamConstDIC.csv",sep=",")
+
+## sen
+write.table(x=outGhanaSen$summary,file="GhanaSen.csv",sep=",")
+write.table(x=outGhanaSen$DIC,file="GhanaSenDIC.csv",sep=",")
+write.table(x=outPrincipeSen$summary,file="PrincipeSen.csv",sep=",")
+write.table(x=outPrincipeSen$DIC,file="PrincipeSenDIC.csv",sep=",")
+write.table(x=outSaoTomeSen$summary,file="SaoTomeSen.csv",sep=",")
+write.table(x=outSaoTomeSen$DIC,file="SaoTomeSenDIC.csv",sep=",")
+write.table(x=outMorogoroSen$summary,file="MorogoroSen.csv",sep=",")
+write.table(x=outMorogoroSen$DIC,file="MorogoroSenDIC.csv",sep=",")
+write.table(x=outDarEsSalaamSen$summary,file="DarEsSalaamSen.csv",sep=",")
+write.table(x=outDarEsSalaamSen$DIC,file="DarEsSalaamSenDIC.csv",sep=",")
+write.table(x=outGhanaSen$summary,file="GhanaSen.csv",sep=",")
+write.table(x=outGhanaSen$DIC,file="GhanaSenDIC.csv",sep=",")
+
+## mat
+write.table(x=outPrincipeMat$summary,file="PrincipeMat.csv",sep=",")
+write.table(x=outPrincipeMat$DIC,file="PrincipeMatDIC.csv",sep=",")
+write.table(x=outSaoTomeMat$summary,file="SaoTomeMat.csv",sep=",")
+write.table(x=outSaoTomeMat$DIC,file="SaoTomeMatDIC.csv",sep=",")
+write.table(x=outMorogoroMat$summary,file="MorogoroMat.csv",sep=",")
+write.table(x=outMorogoroMat$DIC,file="MorogoroMatDIC.csv",sep=",")
+write.table(x=outDarEsSalaamMat$summary,file="DarEsSalaamMat.csv",sep=",")
+write.table(x=outDarEsSalaamMat$DIC,file="DarEsSalaamMatDIC.csv",sep=",")
+
+## both
+write.table(x=outGhanaSiler$summary,file="GhanaSiler.csv",sep=",")
+write.table(x=outGhanaSiler$DIC,file="GhanaSilerDIC.csv",sep=",")
+write.table(x=outPrincipeSiler$summary,file="PrincipeSiler.csv",sep=",")
+write.table(x=outPrincipeSiler$DIC,file="PrincipeSilerDIC.csv",sep=",")
+write.table(x=outSaoTomeSiler$summary,file="SaoTomeSiler.csv",sep=",")
+write.table(x=outSaoTomeSiler$DIC,file="SaoTomeSilerDIC.csv",sep=",")
+write.table(x=outMorogoroSiler$summary,file="MorogoroSiler.csv",sep=",")
+write.table(x=outMorogoroSiler$DIC,file="MorogoroSilerDIC.csv",sep=",")
+write.table(x=outDarEsSalaamSiler$summary,file="DarEsSalaamSiler.csv",sep=",")
+write.table(x=outDarEsSalaamSiler$DIC,file="DarEsSalaamSilerDIC.csv",sep=",")
+
+## constant survival rates for regression
+constantS<-round(c(GhanapConst[1],PrincipepConst[1],SaoTomepConst[1],MorogoropConst[1],DarEsSalaampConst[1]),3)
+constantS<-as.data.frame(constantS)
+row.names(constantS)<-c("Ghana","Principe","SaoTome","Morogoro","DarEsSalaam")
+write.table(x=constantS,file="constantSregression.csv",sep=",")
