@@ -1,977 +1,353 @@
-
 ###############################################
 rm(list=ls())
-#getwd()
-#setwd("~/Dropbox/ali_peel_survival") # set working directory
-#setwd("C:/Users/dtshayma/Documents/GitHub/Survival")
 ## read data
+## MUST RUN 
+## run 'initial_cond.R' r code first to generate values
+## May need to re-run if chooses wrong init value
 dat <- read.csv("weightedAge.csv")
 #dat<-dat[1:14,1:8]
 attach(dat)
 
+## must detach at end of run - see end code
 #####################
 
 # openbugs
 
 library(R2OpenBUGS)
 
-##########################################
-## run code for Ghana 
-########################################
-# constant
+nc=3 # # chains
+ni=10000 # # its
+nb=1000 # # burnin
+nt=1 # thinning
 
-win.data<-list(Ghana=dat$Ghana,Age=dat$Age,nobs=length(dat$Ghana))
-inits<-function()
-  list(a=rnorm(1,300),a2=rnorm(1,0),ghana.sd=runif(1,1,30))
-params<-c("a","a2","ghana.var")
-nc=3
-ni=10000
-nb=1000
-nt=1
-outGhanaE<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                model.file="model.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                n.iter=ni,debug=F,DIC=T,working.directory=getwd())
-plot(outGhanaE)
-hist(outGhanaE$sims.list$a2)
+# paramets
 
-######################################################
-# mat
+paramsC<-c("a","a2","data.var")
+paramsM<-c("a","a1","a2","b1","data.var")
+paramsS<-c("a","a3","a2","b3","data.var")
+paramsB<-c("a","a1","a2","a3","b1","b3","data.var")
 
-win.data<-list(Ghana=dat$Ghana,Age=dat$Age,nobs=length(dat$Ghana))
-inits<-function()
-  list(a=rnorm(1,300),a1=rnorm(1,5),a2=rnorm(1,0),b1=rnorm(1,7),ghana.sd=runif(1,0,30))
-params<-c("a","a1","a2","b1","ghana.var")
+# choose country
+country = Morogoro # Allpops/Bioko/Ghana/Principe/SaoTome/DarEsSalaam/Morogoro
+file_name = "Morogoro"
 
-nc=3
-ni=10000
-nb=1000
-nt=1
-outGhanaMat<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                  model.file="modelMature.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                  n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-plot(outGhanaMat)
-hist(outGhanaMat$sims.list$a2)
-outGhanaMat
+# read initial conditions
+initC<-constant_init$Morogoro
+initS<-sen_init$Morogoro
+initM<-mat_init$Morogoro
+initB<-both_init$Morogoro
 
-################################################################
-# sen
-
-win.data<-list(Ghana=dat$Ghana,Age=dat$Age,nobs=length(dat$Ghana))
-inits<-function()
-  list(a=rnorm(1,300),a3=rnorm(1,-5.5),a2=rnorm(1,0),b3=rnorm(1,-7.7),ghana.sd=runif(1,0,30))
-params<-c("a","a3","a2","b3","ghana.var")
-
-nc=3
-ni=10000
-nb=1000
-nt=10
-outGhanaSen<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                  model.file="modelSen.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                  n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-plot(outGhanaSen)
-outGhanaSen
-
-###############################################################
-## both
-
-win.data<-list(Ghana=dat$Ghana,Age=dat$Age,nobs=length(dat$Ghana))
-inits<-function()
-  list(a=rnorm(1,250),a1=rnorm(1,0.1),a2=rnorm(1,0.05),a3=rnorm(1,-6),b1=rnorm(1,-0.07),b3=rnorm(1,-8),ghana.sd=runif(1,1,30))
-params<-c("a","a1","a2","a3","b1","b3","ghana.var")
-nc=3
-ni=10000
-nb=1000
-nt=10
-outGhanaSiler<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                    model.file="modelSiler.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                    n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-###############################################################
-## plotting
-#############################################################
-
-tiff("Ghana.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-plot(dat$Age,outGhanaE$mean$a*exp(-outGhanaE$mean$a2*dat$Age),ylab="Count",xlab="Age",type="l",ylim=c(0,300),main="Ghana")
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outGhanaE$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outGhanaE$sims.list$a*exp(-outGhanaE$sims.list$a2*dat$Age[i])
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey")
-points(0:15,UPB,type="l",col="grey") # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-lines(dat$Age,outGhanaSen$mean$a*exp(-outGhanaSen$mean$a2*dat$Age)*exp((-outGhanaSen$mean$a3/outGhanaSen$mean$b3)*(1-exp(outGhanaSen$mean$b3*dat$Age))),lty=2)
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outGhanaSen$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outGhanaSen$sims.list$a*exp(-outGhanaSen$sims.list$a2*dat$Age[i])*exp((-outGhanaSen$sims.list$a3/outGhanaSen$sims.list$b3)*(1-exp(outGhanaSen$sims.list$b3*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey",lty=2)
-points(0:15,UPB,type="l",col="grey",lty=2) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-lines(dat$Age,outGhanaMat$mean$a*exp(-outGhanaMat$mean$a2*dat$Age)*exp((-outGhanaMat$mean$a1/outGhanaMat$mean$b1)*(1-exp(-outGhanaMat$mean$b1*dat$Age))),lty=3)
-predictions<-array(dim=c(length(dat$Age),length(outGhanaMat$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outGhanaMat$sims.list$a*exp(-outGhanaMat$sims.list$a2*dat$Age[i])*exp((-outGhanaMat$sims.list$a1/outGhanaMat$sims.list$b1)*(1-exp(-outGhanaMat$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey",lty=3)
-points(0:15,UPB,type="l",col="grey",lty=3) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-lines(dat$Age,outGhanaSiler$mean$a*exp(-outGhanaSiler$mean$a2*dat$Age)*exp((-outGhanaSiler$mean$a3/outGhanaSiler$mean$b3)*(1-exp(outGhanaSiler$mean$b3*dat$Age)))*exp((-outGhanaSiler$mean$a1/outGhanaSiler$mean$b1)*(1-exp(-outGhanaSiler$mean$b1*dat$Age))),lty=4)
-predictions<-array(dim=c(length(dat$Age),length(outGhanaSiler$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outGhanaSiler$sims.list$a*exp(-outGhanaSiler$sims.list$a2*dat$Age[i])*exp((-outGhanaSiler$sims.list$a3/outGhanaSiler$sims.list$b3)*(1-exp(outGhanaSiler$sims.list$b3*dat$Age[i])))*exp((-outGhanaSiler$sims.list$a1/outGhanaSiler$sims.list$b1)*(1-exp(-outGhanaSiler$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey",lty=4)
-points(0:15,UPB,type="l",col="grey",lty=4) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
-       lty=1:4,bty="n")
-points(dat$Age,dat$Ghana,bg="black",pch=21)
-dev.off()
-
-min=min(outGhanaE$DIC,outGhanaMat$DIC,outGhanaSen$DIC,outGhanaSiler$DIC)
-tiff("GhanaDIC.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-barplot(c(outGhanaE$DIC-min,outGhanaMat$DIC-min,outGhanaSen$DIC-min,outGhanaSiler$DIC-min),
-        names.arg=c("Constant","Maturation","Senescence","Both"))
-dev.off()
-
-tiff("GhanaSilerParDist.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-par(mfrow=c(3,2))
-hist(outGhanaSiler$sims.list$a, main="a",xlab="",col="grey")
-abline(v=outGhanaSiler$mean$a,col="red")
-hist(outGhanaSiler$sims.list$a1, main="a1",xlab="",col="grey")
-abline(v=outGhanaSiler$mean$a1,col="red")
-hist(outGhanaSiler$sims.list$a2, main="a2",xlab="",col="grey")
-abline(v=outGhanaSiler$mean$a2,col="red")
-hist(outGhanaSiler$sims.list$a3, main="a3",xlab="",col="grey")
-abline(v=outGhanaSiler$mean$a3,col="red")
-hist(outGhanaSiler$sims.list$b1, main="b1",xlab="",col="grey")
-abline(v=outGhanaSiler$mean$b1,col="red")
-hist(outGhanaSiler$sims.list$b3, main="b3",xlab="",col="grey")
-abline(v=outGhanaSiler$mean$b3,col="red")
-dev.off()
-###########################################
-# plotting posterior vs priors
-tiff("GhanaSilerPostPrior.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-par(mfrow=c(3,2))
-plot(density(outGhanaSiler$sims.list$a), main="a",xlab="",xlim=c(0,1000))
-polygon(density(outGhanaSiler$sims.list$a), col =  "#00000010", border = NA)
-lines(density(runif(1:1000,min=0,max=1000)),col="red")
-polygon(density(runif(1:1000,min=0,max=1000)), col =  "#FF000010", border = NA)
-
-plot(density(outGhanaSiler$sims.list$a1), main="a1",xlab="",xlim=c(-10,10))
-polygon(density(outGhanaSiler$sims.list$a1), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))),col="red")
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
-
-plot(density(outGhanaSiler$sims.list$a2), main="a2",xlab="",xlim=c(-10,10))
-polygon(density(outGhanaSiler$sims.list$a2), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))),col="red")
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
-
-plot(density(outGhanaSiler$sims.list$a3), main="a3",xlab="",xlim=c(-10,10))
-polygon(density(outGhanaSiler$sims.list$a3), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))),,col="red")
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
-
-plot(density(outGhanaSiler$sims.list$b1), main="b1",xlab="",xlim=c(-10,10))
-polygon(density(outGhanaSiler$sims.list$b1), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))),col="red")
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
-
-plot(density(outGhanaSiler$sims.list$b3), main="b3",xlab="",xlim=c(-10,10))
-polygon(density(outGhanaSiler$sims.list$b3), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))),col="red")
-polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
-dev.off()
-
-par(mfrow=c(1,1))
-########################
-
-## calculate survival lx-1/lx
-## plotting
-######################################
-
-GhanaSConst<-outGhanaE$mean$a*exp(-outGhanaE$mean$a2*dat$Age)
-GhanaSSen<-outGhanaSen$mean$a*exp(-outGhanaSen$mean$a2*dat$Age)*exp((-outGhanaSen$mean$a3/outGhanaSen$mean$b3)*(1-exp(outGhanaSen$mean$b3*dat$Age)))
-GhanaSMat<-outGhanaMat$mean$a*exp(-outGhanaMat$mean$a2*dat$Age)*exp((-outGhanaMat$mean$a1/outGhanaMat$mean$b1)*(1-exp(-outGhanaMat$mean$b1*dat$Age)))
-GhanaSSiler<-outGhanaSiler$mean$a*exp(-outGhanaSiler$mean$a2*dat$Age)*exp((-outGhanaSiler$mean$a3/outGhanaSiler$mean$b3)*(1-exp(outGhanaSiler$mean$b3*dat$Age)))*exp((-outGhanaSiler$mean$a1/outGhanaSiler$mean$b1)*(1-exp(-outGhanaSiler$mean$b1*dat$Age)))
-############################
-GhanapConst=(GhanaSConst[1:15+1])/(GhanaSConst[1:15])
-GhanapSen=(GhanaSSen[1:15+1])/(GhanaSSen[1:15])
-GhanapMat=(GhanaSMat[1:15+1])/(GhanaSMat[1:15])
-GhanapSiler=(GhanaSSiler[1:15+1])/(GhanaSSiler[1:15])
-
-tiff("GhanaS.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-par(mfrow=c(1,1))
-plot(0:14,GhanapConst,ylim=c(0,1),type="l",xlab="Age",ylab="Survival",main="Ghana")
-lines(0:14,GhanapSen,lty=2)
-lines(0:14,GhanapMat,lty=3)
-lines(0:14,GhanapSiler,lty=4)
-legend("bottomright",legend=c("Constant","Maturation","Senescence","Both"),
-       lty=1:4,bty="n")
-dev.off()
+# data
+win.data<-list(data=country,Age=Age,nobs=length(country))
 
 ##########################################
-## run code for Sao Tome
+## run code for the country
 ########################################
-# constant
+# constant survival
 
-win.data<-list(data=dat$SaoTome,Age=dat$Age,nobs=length(dat$SaoTome))
 inits<-function()
-  list(a=rnorm(1,30),a2=rnorm(1,0),data.sd=runif(1,1,30))
-params<-c("a","a2","data.var")
-nc=3
-ni=10000
-nb=1000
-nt=1
-outSaoTomeE<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+  initC
+outC<-bugs(data=win.data,inits=inits,parameters.to.save=paramsC,
                   model.file="allmodel.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
                   n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-plot(outSaoTomeE)
-hist(outSaoTomeE$sims.list$a2)
-
-a=24.6
-a2=0.3
-Age=dat$Age
-plot(dat$Age,a*exp(-a2*Age),type="l")
-points(dat$Age,dat$SaoTome)
+# plot(out)
+# hist(out$sims.list$a2)
+write.table(x=outC$summary,file=paste(file_name,'Const.csv',sep=""))
 
 ######################################################
-# mat
+# maturation
 
-win.data<-list(data=dat$SaoTome,Age=dat$Age,nobs=length(dat$SaoTome))
 inits<-function()
-  list(a=rnorm(1,30),a1=rnorm(1,5),a2=rnorm(1,0),b1=rnorm(1,7),data.sd=runif(1,0,30))
-params<-c("a","a1","a2","b1","data.var")
+  initM
 
-nc=3
-ni=10000
-nb=1000
-nt=1
-outSaoTomeMat<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+outM<-bugs(data=win.data,inits=inits,parameters.to.save=paramsM,
                     model.file="allmodelMature.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
                     n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-plot(outSaoTomeMat)
-hist(outSaoTomeMat$sims.list$a2)
-outSaoTomeMat
-a=24.2
-a1=0.1
-b1=0.000001
-a2=0.1
-Age=dat$Age
-plot(dat$Age,a*exp(-a2*Age)*exp((-a1/b1)*(1-exp(-b1*Age))),type="l")
-points(dat$Age,dat$SaoTome)
+write.table(x=outM$summary,file=paste(file_name,'Mat.csv',sep=""))
 
 ################################################################
-# sen
+# senescence
 
-win.data<-list(data=dat$SaoTome,Age=dat$Age,nobs=length(dat$SaoTome))
 inits<-function()
-  list(a=rnorm(1,30),a3=rnorm(1,-6),a2=rnorm(1,0),b3=rnorm(1,-2),data.sd=runif(1,0,30))
-params<-c("a","a3","a2","b3","data.var")
+  initS
 
-nc=3
-ni=10000
-nb=1000
-nt=10
-outSaoTomeSen<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+outS<-bugs(data=win.data,inits=inits,parameters.to.save=paramsS,
                     model.file="allmodelSen.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
                     n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-plot(outSaoTomeSen)
-outSaoTomeSen
+write.table(x=outS$summary,file=paste(file_name,'Sen.csv',sep=""))
 
 ###############################################################
 ## both
 
-win.data<-list(data=dat$SaoTome,Age=dat$Age,nobs=length(dat$SaoTome))
 inits<-function()
-  list(a=rnorm(1,30),a1=rnorm(1,0.1),a2=rnorm(1,0.1),a3=rnorm(1,-5),b1=rnorm(1,-0.01),b3=rnorm(1,-10),data.sd=runif(1,1,30))
-params<-c("a","a1","a2","a3","b1","b3","data.var")
-nc=3
-ni=10000
-nb=1000
-nt=10
-outSaoTomeSiler<-bugs(data=win.data,inits=inits,parameters.to.save=params,
+  initB
+
+outB<-bugs(data=win.data,inits=inits,parameters.to.save=paramsB,
                       model.file="allmodelSiler.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
                       n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+write.table(x=outB$summary,file=paste(file_name,'Both.csv',sep=""))
 
 ##############################################################
+## models and predictions for plotting
+##############################################################
+## const
+const<-outC$mean$a*exp(-outC$mean$a2*Age)
+
+predictionsC<-array(dim=c(length(Age),length(outC$sims.list$a)))
+for (i in 1:length(Age)){
+  predictionsC[i,]<-outC$sims.list$a*exp(-outC$sims.list$a2*Age[i])
+}
+LPBc<-apply(predictionsC,1,quantile,probs=0.025)
+UPBc<-apply(predictionsC,1,quantile,probs=0.975)
+
+## sen
+sen<-outS$mean$a*exp(-outS$mean$a2*Age)*exp((-outS$mean$a3/outS$mean$b3)*(1-exp(outS$mean$b3*Age)))
+
+predictionsS<-array(dim=c(length(Age),length(outS$sims.list$a)))
+for (i in 1:length(Age)){
+  predictionsS[i,]<-outS$sims.list$a*exp(-outS$sims.list$a2*Age[i])*
+    exp((-outS$sims.list$a3/outS$sims.list$b3)*
+         (1-exp(outS$sims.list$b3*Age[i])))
+}
+LPBs<-apply(predictionsS,1,quantile,probs=0.025)
+UPBs<-apply(predictionsS,1,quantile,probs=0.975)
+
+## mat
+mat<-outM$mean$a*exp(-outM$mean$a2*Age)*exp((-outM$mean$a1/outM$mean$b1)*(1-exp(-outM$mean$b1*Age)))
+
+predictionsM<-array(dim=c(length(Age),length(outM$sims.list$a)))
+for (i in 1:length(Age)){
+  predictionsM[i,]<-outM$sims.list$a*exp(-outM$sims.list$a2*Age[i])*exp((-outM$sims.list$a1/outM$sims.list$b1)*(1-exp(-outM$sims.list$b1*dat$Age[i])))
+}
+LPBm<-apply(predictionsM,1,quantile,probs=0.025)
+UPBm<-apply(predictionsM,1,quantile,probs=0.975)
+
+## both/Siler
+both<-outB$mean$a*exp(-outB$mean$a2*dat$Age)*exp((-outB$mean$a3/outB$mean$b3)*(1-exp(outB$mean$b3*dat$Age)))*exp((-outB$mean$a1/outB$mean$b1)*(1-exp(-outB$mean$b1*dat$Age)))
+predictionsB<-array(dim=c(length(Age),length(outB$sims.list$a)))
+for (i in 1:length(Age)){
+  predictionsB[i,]<-outB$sims.list$a*exp(-outB$sims.list$a2*Age[i])*exp((-outB$sims.list$a3/outB$sims.list$b3)*(1-exp(outB$sims.list$b3*dat$Age[i])))*exp((-outB$sims.list$a1/outB$sims.list$b1)*(1-exp(-outB$sims.list$b1*Age[i])))
+}
+LPBb<-apply(predictionsB,1,quantile,probs=0.025)
+UPBb<-apply(predictionsB,1,quantile,probs=0.975)
+
 ## plotting
-##############################################################
 
-tiff("SaoTome.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-plot(0:15,outSaoTomeE$mean$a*exp(-outSaoTomeE$mean$a2*dat$Age),ylab="Count",xlab="Age",type="l",ylim=c(0,40),main= "Sao Tome")
+tiff(paste(file_name,'.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
+
+plot(0:15,const,ylab="Count",xlab="Age",type="l",ylim=c(0,max(country,na.rm=T)+20),main=file_name)
 ## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outSaoTomeE$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outSaoTomeE$sims.list$a*exp(-outSaoTomeE$sims.list$a2*dat$Age[i])
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey")
-points(0:15,UPB,type="l",col="grey") # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+points(0:15,LPBc,type="l",col="grey")
+points(0:15,UPBc,type="l",col="grey") # check 1 or 0 start
+polygon(c(rev(Age), Age), c(rev(LPBc),UPBc), col =  "#00000010", border = NA)
 
-lines(0:15,outSaoTomeSen$mean$a*exp(-outSaoTomeSen$mean$a2*dat$Age)*exp((-outSaoTomeSen$mean$a3/outSaoTomeSen$mean$b3)*(1-exp(outSaoTomeSen$mean$b3*dat$Age))),lty=2)
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outSaoTomeSen$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outSaoTomeSen$sims.list$a*exp(-outSaoTomeSen$sims.list$a2*dat$Age[i])*exp((-outSaoTomeSen$sims.list$a3/outSaoTomeSen$sims.list$b3)*(1-exp(outSaoTomeSen$sims.list$b3*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey",lty=2)
-points(0:15,UPB,type="l",col="grey",lty=2) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+lines(0:15,sen,lty=2)
+points(0:15,LPBs,type="l",col="grey",lty=2)
+points(0:15,UPBs,type="l",col="grey",lty=2) # check 1 or 0 start
+polygon(c(rev(Age), Age), c(rev(LPBs),UPBs), col =  "#00000010", border = NA)
 
-lines(0:15,outSaoTomeMat$mean$a*exp(-outSaoTomeMat$mean$a2*dat$Age)*exp((-outSaoTomeMat$mean$a1/outSaoTomeMat$mean$b1)*(1-exp(-outSaoTomeMat$mean$b1*dat$Age))),lty=3)
-predictions<-array(dim=c(length(dat$Age),length(outSaoTomeMat$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outSaoTomeMat$sims.list$a*exp(-outSaoTomeMat$sims.list$a2*dat$Age[i])*exp((-outSaoTomeMat$sims.list$a1/outSaoTomeMat$sims.list$b1)*(1-exp(-outSaoTomeMat$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey",lty=3)
-points(0:15,UPB,type="l",col="grey",lty=3) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+lines(0:15,mat,lty=3)
+points(0:15,LPBm,type="l",col="grey",lty=3)
+points(0:15,UPBm,type="l",col="grey",lty=3) # check 1 or 0 start
+polygon(c(rev(Age), Age), c(rev(LPBm),UPBm), col =  "#00000010", border = NA)
 
-lines(0:15,outSaoTomeSiler$mean$a*exp(-outSaoTomeSiler$mean$a2*dat$Age)*exp((-outSaoTomeSiler$mean$a3/outSaoTomeSiler$mean$b3)*(1-exp(outSaoTomeSiler$mean$b3*dat$Age)))*exp((-outSaoTomeSiler$mean$a1/outSaoTomeSiler$mean$b1)*(1-exp(-outSaoTomeSiler$mean$b1*dat$Age))),lty=4)
-predictions<-array(dim=c(length(dat$Age),length(outSaoTomeSiler$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outSaoTomeSiler$sims.list$a*exp(-outSaoTomeSiler$sims.list$a2*dat$Age[i])*exp((-outSaoTomeSiler$sims.list$a3/outSaoTomeSiler$sims.list$b3)*(1-exp(outSaoTomeSiler$sims.list$b3*dat$Age[i])))*exp((-outSaoTomeSiler$sims.list$a1/outSaoTomeSiler$sims.list$b1)*(1-exp(-outSaoTomeSiler$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey",lty=4)
-points(0:15,UPB,type="l",col="grey",lty=4) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+lines(0:15,both,lty=4)
+points(0:15,LPBb,type="l",col="grey",lty=4)
+points(0:15,UPBb,type="l",col="grey",lty=4) # check 1 or 0 start
+polygon(c(rev(Age), Age), c(rev(LPBb),UPBb), col =  "#00000010", border = NA)
 
 legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
        lty=1:4,bty="n")
-points(dat$Age,dat$SaoTome,bg="black",pch=21)
+points(Age,country,bg="black",pch=21)
+
 dev.off()
 
-min=min(outSaoTomeE$DIC,outSaoTomeMat$DIC,outSaoTomeSen$DIC,outSaoTomeSiler$DIC)
+## DIC model selection
 
-tiff("SaoTomeDIC.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-barplot(c(outSaoTomeE$DIC-min,outSaoTomeMat$DIC-min,outSaoTomeSen$DIC-min,outSaoTomeSiler$DIC-min),
+x=cbind(outC$DIC,outM$DIC,outS$DIC,outB$DIC)
+colnames(x)<-c("C",'M',"S","B");rownames(x)<-"DIC"
+write.table(x,file=paste(file_name,'DIC.csv',sep=""))
+
+min=min(outC$DIC,outM$DIC,outS$DIC,outB$DIC)
+
+tiff(paste(file_name,'dic.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
+barplot(c(outC$DIC-min,outM$DIC-min,outS$DIC-min,outB$DIC-min),
         names.arg=c("Constant","Maturation","Senescence","Both"))
 dev.off()
 
-tiff("SaoTomeSilerParDist.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-par(mfrow=c(3,2))
-hist(outSaoTomeSiler$sims.list$a, main="a",xlab="",col="grey")
-abline(v=outSaoTomeSiler$mean$a,col="red")
-hist(outSaoTomeSiler$sims.list$a1, main="a1",xlab="",col="grey")
-abline(v=outSaoTomeSiler$mean$a1,col="red")
-hist(outSaoTomeSiler$sims.list$a2, main="a2",xlab="",col="grey")
-abline(v=outSaoTomeSiler$mean$a2,col="red")
-hist(outSaoTomeSiler$sims.list$a3, main="a3",xlab="",col="grey")
-abline(v=outSaoTomeSiler$mean$a3,col="red")
-hist(outSaoTomeSiler$sims.list$b1, main="b1",xlab="",col="grey")
-abline(v=outSaoTomeSiler$mean$b1,col="red")
-hist(outSaoTomeSiler$sims.list$b3, main="b3",xlab="",col="grey")
-abline(v=outSaoTomeSiler$mean$b3,col="red")
+# pars distributions
+
+# const
+tiff(paste(file_name,'pars_const.tiff', sep=''),width=8,height=3,units='in',res=300, compression = "lzw")
+par(mfrow=c(1,2))
+hist(outC$sims.list$a, main="a",xlab="",col="grey")
+abline(v=outC$mean$a,col="red")
+hist(outC$sims.list$a2, main="a2",xlab="",col="grey")
+abline(v=outC$mean$a2,col="red")
 dev.off()
-###############################################################################
-# plotting posterior vs priors
-tiff("SaoTomePostPrior.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
+
+# mat
+tiff(paste(file_name,'pars_mat.tiff', sep=''),width=8,height=6,units='in',res=300, compression = "lzw")
+par(mfrow=c(2,2))
+hist(outM$sims.list$a, main="a",xlab="",col="grey")
+abline(v=outM$mean$a,col="red")
+hist(outM$sims.list$a1, main="a1",xlab="",col="grey")
+abline(v=outM$mean$a1,col="red")
+hist(outM$sims.list$a2, main="a2",xlab="",col="grey")
+abline(v=outM$mean$a2,col="red")
+hist(outM$sims.list$b1, main="b1",xlab="",col="grey")
+abline(v=outM$mean$b1,col="red")
+dev.off()
+
+# sen
+tiff(paste(file_name,'pars_sen.tiff', sep=''),width=8,height=6,units='in',res=300, compression = "lzw")
+par(mfrow=c(2,2))
+hist(outS$sims.list$a, main="a",xlab="",col="grey")
+abline(v=outS$mean$a,col="red")
+hist(outS$sims.list$a2, main="a2",xlab="",col="grey")
+abline(v=outS$mean$a2,col="red")
+hist(outS$sims.list$a3, main="a3",xlab="",col="grey")
+abline(v=outS$mean$a3,col="red")
+hist(outS$sims.list$b3, main="b3",xlab="",col="grey")
+abline(v=outS$mean$b3,col="red")
+dev.off()
+
+# both
+tiff(paste(file_name,'pars_siler.tiff', sep=''),width=8,height=9,units='in',res=300, compression = "lzw")
 par(mfrow=c(3,2))
-plot(density(outSaoTomeSiler$sims.list$a), main="a",xlab="",xlim=c(0,200))
-polygon(density(outSaoTomeSiler$sims.list$a), col =  "#00000010", border = NA)
+hist(outB$sims.list$a, main="a",xlab="",col="grey")
+abline(v=outB$mean$a,col="red")
+hist(outB$sims.list$a1, main="a1",xlab="",col="grey")
+abline(v=outB$mean$a1,col="red")
+hist(outB$sims.list$a2, main="a2",xlab="",col="grey")
+abline(v=outB$mean$a2,col="red")
+hist(outB$sims.list$a3, main="a3",xlab="",col="grey")
+abline(v=outB$mean$a3,col="red")
+hist(outB$sims.list$b1, main="b1",xlab="",col="grey")
+abline(v=outB$mean$b1,col="red")
+hist(outB$sims.list$b3, main="b3",xlab="",col="grey")
+abline(v=outB$mean$b3,col="red")
+dev.off()
+
+# plotting posterior vs priors
+
+tiff(paste(file_name,'siler_post_pri.tiff', sep=''),width=8,height=9,units='in',res=300, compression = "lzw")
+par(mfrow=c(3,2))
+plot(density(outB$sims.list$a), main="a",xlab="")
+polygon(density(outB$sims.list$a), col =  "#00000010", border = NA)
 lines(density(runif(1:1000,min=0,max=1000)),col="red")
 polygon(density(runif(1:1000,min=0,max=1000)), col =  "#FF000010", border = NA)
 
-plot(density(outSaoTomeSiler$sims.list$a1), main="a1",xlab="",xlim=c(-10,10))
-polygon(density(outSaoTomeSiler$sims.list$a1), col =  "#00000010", border = NA)
+plot(density(outB$sims.list$a1), main="a1",xlab="")
+polygon(density(outB$sims.list$a1), col =  "#00000010", border = NA)
 lines(density((rnorm(1:1000,mean=0,sd=10))),col="red")
 polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
 
-plot(density(outSaoTomeSiler$sims.list$a2), main="a2",xlab="",xlim=c(-10,10))
-polygon(density(outSaoTomeSiler$sims.list$a2), col =  "#00000010", border = NA)
+plot(density(outB$sims.list$a2), main="a2",xlab="")
+polygon(density(outB$sims.list$a2), col =  "#00000010", border = NA)
 lines(density((rnorm(1:1000,mean=0,sd=10))),col="red")
 polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
 
-plot(density(outSaoTomeSiler$sims.list$a3), main="a3",xlab="",xlim=c(-10,10))
-polygon(density(outSaoTomeSiler$sims.list$a3), col =  "#00000010", border = NA)
+plot(density(outB$sims.list$a3), main="a3",xlab="")
+polygon(density(outB$sims.list$a3), col =  "#00000010", border = NA)
 lines(density((rnorm(1:1000,mean=0,sd=10))),,col="red")
 polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
 
-plot(density(outSaoTomeSiler$sims.list$b1), main="b1",xlab="",xlim=c(-10,10))
-polygon(density(outSaoTomeSiler$sims.list$b1), col =  "#00000010", border = NA)
+plot(density(outB$sims.list$b1), main="b1",xlab="")
+polygon(density(outB$sims.list$b1), col =  "#00000010", border = NA)
 lines(density((rnorm(1:1000,mean=0,sd=10))),col="red")
 polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
 
-plot(density(outSaoTomeSiler$sims.list$b3), main="b3",xlab="",xlim=c(-10,10))
-polygon(density(outSaoTomeSiler$sims.list$b3), col =  "#00000010", border = NA)
+plot(density(outB$sims.list$b3), main="b3",xlab="")
+polygon(density(outB$sims.list$b3), col =  "#00000010", border = NA)
 lines(density((rnorm(1:1000,mean=0,sd=10))),col="red")
 polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
 dev.off()
-###############################
-par(mfrow=c(1,1))
+
 ## calculate survival lx-1/lx
 ######################################
+# const
+constd=const[1:15]-const[1:15+1]
+constq<-constd/const[1:15]
+constp<-1-constq
+constP<-numeric(length(constp))
+constP[1]<-1
+for (i in 2:length(constP)){
+constP[i]<-constp[i-1]*constP[i-1]
+}
 
-SaoTomeSConst<-outSaoTomeE$mean$a*exp(-outSaoTomeE$mean$a2*dat$Age)
-SaoTomeSSen<-outSaoTomeSen$mean$a*exp(-outSaoTomeSen$mean$a2*dat$Age)*exp((-outSaoTomeSen$mean$a3/outSaoTomeSen$mean$b3)*(1-exp(outSaoTomeSen$mean$b3*dat$Age)))
-SaoTomeSMat<-outSaoTomeMat$mean$a*exp(-outSaoTomeMat$mean$a2*dat$Age)*exp((-outSaoTomeMat$mean$a1/outSaoTomeMat$mean$b1)*(1-exp(-outSaoTomeMat$mean$b1*dat$Age)))
-SaoTomeSSiler<-outSaoTomeSiler$mean$a*exp(-outSaoTomeSiler$mean$a2*dat$Age)*exp((-outSaoTomeSiler$mean$a3/outSaoTomeSiler$mean$b3)*(1-exp(outSaoTomeSiler$mean$b3*dat$Age)))*exp((-outSaoTomeSiler$mean$a1/outSaoTomeSiler$mean$b1)*(1-exp(-outSaoTomeSiler$mean$b1*dat$Age)))
-############################
-SaoTomepConst=(SaoTomeSConst[1:15+1])/(SaoTomeSConst[1:15])
-SaoTomepSen=(SaoTomeSSen[1:15+1])/(SaoTomeSSen[1:15])
-SaoTomepMat=(SaoTomeSMat[1:15+1])/(SaoTomeSMat[1:15])
-SaoTomepSiler=(SaoTomeSSiler[1:15+1])/(SaoTomeSSiler[1:15])
+n <- length(const)
+length(constd)<-n
+length(constq)<-n
+length(constp)<-n
+length(constP)<-n
 
-tiff("SaoTomeS.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-plot(0:14,SaoTomepConst,ylim=c(0,1),type="l",xlab="Age",ylab="Survival",main="Sao Tome")
-lines(0:14,SaoTomepSen,lty=2)
-lines(0:14,SaoTomepMat,lty=3)
-lines(0:14,SaoTomepSiler,lty=4)
-dev.off()
+write.table(x=cbind(const,constd,constq,constp,constP),file=paste(file_name,'const_life_table.csv',sep=""))
 
+## mat
+matd=mat[1:15]-mat[1:15+1]
+matq<-matd/mat[1:15]
+matp<-1-matq
+matP<-numeric(length(matp))
+matP[1]<-1
+for (i in 2:length(matP)){
+  matP[i]<-matp[i-1]*matP[i-1]
+}
 
-##########################################
-## run code for Principe
-########################################
-# constant
+n <- length(mat)
+length(matd)<-n
+length(matq)<-n
+length(matp)<-n
+length(matP)<-n
 
+write.table(x=cbind(mat,matd,matq,matp,matP),file=paste(file_name,'mat_life_table.csv',sep=""))
 
-win.data<-list(data=dat$Principe,Age=dat$Age,nobs=length(dat$Principe))
-inits<-function()
-  list(a=rnorm(1,30),a2=rnorm(1,0),data.sd=runif(1,1,30))
-params<-c("a","a2","data.var")
-nc=3
-ni=10000
-nb=1000
-nt=1
-outPrincipeE<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                   model.file="allmodel.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                   n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-plot(outPrincipeE)
-hist(outPrincipeE$sims.list$a2)
+## sen
+send=sen[1:15]-sen[1:15+1]
+senq<-send/sen[1:15]
+senp<-1-senq
+senP<-numeric(length(senp))
+senP[1]<-1
+for (i in 2:length(senP)){
+  senP[i]<-senp[i-1]*senP[i-1]
+}
 
-######################################################
-# mat
+n <- length(sen)
+length(send)<-n
+length(senq)<-n
+length(senp)<-n
+length(senP)<-n
 
-win.data<-list(data=dat$Principe,Age=dat$Age,nobs=length(dat$Principe))
-inits<-function()
-  list(a=rnorm(1,20),a1=rnorm(1,0.1),a2=rnorm(1,0.1),b1=rnorm(1,0.1),data.sd=runif(1,0,30))
-params<-c("a","a1","a2","b1","data.var")
+write.table(x=cbind(sen,send,senq,senp,senP),file=paste(file_name,'sen_life_table.csv',sep=""))
 
-nc=3
-ni=10000
-nb=1000
-nt=1
-outPrincipeMat<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                     model.file="allmodelMature.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                     n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-plot(outPrincipeMat)
-hist(outPrincipeMat$sims.list$a2)
-outPrincipeMat
-
-################################################################
-# sen
-
-win.data<-list(data=dat$Principe,Age=dat$Age,nobs=length(dat$Principe))
-inits<-function()
-  list(a=rnorm(1,11),a3=rnorm(1,-0.01),a2=rnorm(1,0.1),b3=rnorm(1,-0.01),data.sd=runif(1,0,30))
-params<-c("a","a3","a2","b3","data.var")
-
-nc=3
-ni=10000
-nb=1000
-nt=10
-outPrincipeSen<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                     model.file="allmodelSen.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                     n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-plot(outPrincipeSen)
-outPrincipeSen
-
-###############################################################
 ## both
-
-win.data<-list(data=dat$Principe,Age=dat$Age,nobs=length(dat$Principe))
-inits<-function()
-  list(a=rnorm(1,15),a1=rnorm(1,0.1),a2=rnorm(1,0.1),a3=rnorm(1,-0.01),b1=rnorm(1,-0.01),b3=rnorm(1,-10),data.sd=runif(1,1,30))
-params<-c("a","a1","a2","a3","b1","b3","data.var")
-nc=3
-ni=10000
-nb=1000
-nt=10
-outPrincipeSiler<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                       model.file="allmodelSiler.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                       n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-####################################################################
-# plotting
-######################################################################
-
-tiff("Principe.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-plot(0:15,outPrincipeE$mean$a*exp(-outPrincipeE$mean$a2*dat$Age),ylab="Count",xlab="Age",type="l",ylim=c(0,20),main="Principe")
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outPrincipeE$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outPrincipeE$sims.list$a*exp(-outPrincipeE$sims.list$a2*dat$Age[i])
+bothd=both[1:15]-both[1:15+1]
+bothq<-bothd/both[1:15]
+bothp<-1-bothq
+bothP<-numeric(length(bothp))
+bothP[1]<-1
+for (i in 2:length(bothP)){
+  bothP[i]<-bothp[i-1]*bothP[i-1]
 }
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey")
-points(0:15,UPB,type="l",col="grey") # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
 
-lines(0:15,outPrincipeSen$mean$a*exp(-outPrincipeSen$mean$a2*dat$Age)*exp((-outPrincipeSen$mean$a3/outPrincipeSen$mean$b3)*(1-exp(outPrincipeSen$mean$b3*dat$Age))),lty=2)
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outPrincipeSen$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outPrincipeSen$sims.list$a*exp(-outPrincipeSen$sims.list$a2*dat$Age[i])*exp((-outPrincipeSen$sims.list$a3/outPrincipeSen$sims.list$b3)*(1-exp(outPrincipeSen$sims.list$b3*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey",lty=2)
-points(0:15,UPB,type="l",col="grey",lty=2) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+n <- length(both)
+length(bothd)<-n
+length(bothq)<-n
+length(bothp)<-n
+length(bothP)<-n
 
-lines(0:15,outPrincipeMat$mean$a*exp(-outPrincipeMat$mean$a2*dat$Age)*exp((-outPrincipeMat$mean$a1/outPrincipeMat$mean$b1)*(1-exp(-outPrincipeMat$mean$b1*dat$Age))),lty=3)
-predictions<-array(dim=c(length(dat$Age),length(outPrincipeMat$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outPrincipeMat$sims.list$a*exp(-outPrincipeMat$sims.list$a2*dat$Age[i])*exp((-outPrincipeMat$sims.list$a1/outPrincipeMat$sims.list$b1)*(1-exp(-outPrincipeMat$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey",lty=3)
-points(0:15,UPB,type="l",col="grey",lty=3) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
+write.table(x=cbind(both,bothd,bothq,bothp,bothP),file=paste(file_name,'both_life_table.csv',sep=""))
 
-lines(0:15,outPrincipeSiler$mean$a*exp(-outPrincipeSiler$mean$a2*dat$Age)*exp((-outPrincipeSiler$mean$a3/outPrincipeSiler$mean$b3)*(1-exp(outPrincipeSiler$mean$b3*dat$Age)))*exp((-outPrincipeSiler$mean$a1/outPrincipeSiler$mean$b1)*(1-exp(-outPrincipeSiler$mean$b1*dat$Age))),lty=4)
-predictions<-array(dim=c(length(dat$Age),length(outPrincipeSiler$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outPrincipeSiler$sims.list$a*exp(-outPrincipeSiler$sims.list$a2*dat$Age[i])*exp((-outPrincipeSiler$sims.list$a3/outPrincipeSiler$sims.list$b3)*(1-exp(outPrincipeSiler$sims.list$b3*dat$Age[i])))*exp((-outPrincipeSiler$sims.list$a1/outPrincipeSiler$sims.list$b1)*(1-exp(-outPrincipeSiler$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey",lty=4)
-points(0:15,UPB,type="l",col="grey",lty=4) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
-       lty=1:4,bty="n")
-points(dat$Age,dat$Principe,bg="black",pch=21)
+tiff(paste(file_name,'_ST.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
+plot(0:15,constp,ylim=c(0,1),type="l",xlab="Age",ylab="Survival",main=file_name)
+lines(0:15,senp,lty=2)
+lines(0:15,matp,lty=3)
+lines(0:15,bothp,lty=4)
 dev.off()
+detach(dat)
 
-min=min(outPrincipeE$DIC,outPrincipeMat$DIC,outPrincipeSen$DIC,outPrincipeSiler$DIC)
-tiff("PrincipeDIC.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-barplot(c(outPrincipeE$DIC-min,outPrincipeMat$DIC-min,outPrincipeSen$DIC-min,outPrincipeSiler$DIC-min),
-        names.arg=c("Constant","Maturation","Senescence","Both"))
-dev.off()
-
-tiff("PrincipeSilerParDist.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-par(mfrow=c(3,2))
-hist(outPrincipeSiler$sims.list$a, main="a",xlab="",col="grey")
-abline(v=outPrincipeSiler$mean$a,col="red")
-hist(outPrincipeSiler$sims.list$a1, main="a1",xlab="",col="grey")
-abline(v=outPrincipeSiler$mean$a1,col="red")
-hist(outPrincipeSiler$sims.list$a2, main="a2",xlab="",col="grey")
-abline(v=outPrincipeSiler$mean$a2,col="red")
-hist(outPrincipeSiler$sims.list$a3, main="a3",xlab="",col="grey")
-abline(v=outPrincipeSiler$mean$a3,col="red")
-hist(outPrincipeSiler$sims.list$b1, main="b1",xlab="",col="grey")
-abline(v=outPrincipeSiler$mean$b1,col="red")
-hist(outPrincipeSiler$sims.list$b3, main="b3",xlab="",col="grey")
-abline(v=outPrincipeSiler$mean$b3,col="red")
-dev.off()
-###############################################################################
-## calculate survival lx-1/lx
-par(mfrow=c(1,1))
 ######################################
-
-PrincipeSConst<-outPrincipeE$mean$a*exp(-outPrincipeE$mean$a2*dat$Age)
-PrincipeSSen<-outPrincipeSen$mean$a*exp(-outPrincipeSen$mean$a2*dat$Age)*exp((-outPrincipeSen$mean$a3/outPrincipeSen$mean$b3)*(1-exp(outPrincipeSen$mean$b3*dat$Age)))
-PrincipeSMat<-outPrincipeMat$mean$a*exp(-outPrincipeMat$mean$a2*dat$Age)*exp((-outPrincipeMat$mean$a1/outPrincipeMat$mean$b1)*(1-exp(-outPrincipeMat$mean$b1*dat$Age)))
-PrincipeSSiler<-outPrincipeSiler$mean$a*exp(-outPrincipeSiler$mean$a2*dat$Age)*exp((-outPrincipeSiler$mean$a3/outPrincipeSiler$mean$b3)*(1-exp(outPrincipeSiler$mean$b3*dat$Age)))*exp((-outPrincipeSiler$mean$a1/outPrincipeSiler$mean$b1)*(1-exp(-outPrincipeSiler$mean$b1*dat$Age)))
-############################
-PrincipepConst=(PrincipeSConst[1:15+1])/(PrincipeSConst[1:15])
-PrincipepSen=(PrincipeSSen[1:15+1])/(PrincipeSSen[1:15])
-PrincipepMat=(PrincipeSMat[1:15+1])/(PrincipeSMat[1:15])
-PrincipepSiler=(PrincipeSSiler[1:15+1])/(PrincipeSSiler[1:15])
-
-tiff("PrincipeS.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-plot(0:14,PrincipepConst,ylim=c(0,1),type="l",xlab="Age",ylab="Survival",main="Principe")
-lines(0:14,PrincipepSen,lty=2)
-lines(0:14,PrincipepMat,lty=3)
-lines(0:14,PrincipepSiler,lty=4)
-dev.off()
-
-
-##########################################
-## run code for Morogoro 
-########################################
-# constant
-
-
-win.data<-list(data=dat$Morogoro,Age=dat$Age,nobs=length(dat$Morogoro))
-inits<-function()
-  list(a=rnorm(1,30),a2=rnorm(1,0),data.sd=runif(1,1,30))
-params<-c("a","a2","data.var")
-nc=3
-ni=10000
-nb=1000
-nt=1
-outMorogoroE<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                   model.file="allmodel.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                   n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-plot(outMorogoroE)
-hist(outMorogoroE$sims.list$a2)
-
-######################################################
-# mat
-
-win.data<-list(data=dat$Morogoro,Age=dat$Age,nobs=length(dat$Morogoro))
-inits<-function()
-  list(a=rnorm(1,14),a1=rnorm(1,0.1),a2=rnorm(1,0.1),b1=rnorm(1,0.1),data.sd=runif(1,0,30))
-params<-c("a","a1","a2","b1","data.var")
-
-nc=3
-ni=10000
-nb=1000
-nt=1
-outMorogoroMat<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                     model.file="allmodelMature.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                     n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-plot(outMorogoroMat)
-hist(outMorogoroMat$sims.list$a2)
-outMorogoroMat
-
-################################################################
-# sen
-
-win.data<-list(data=dat$Morogoro,Age=dat$Age,nobs=length(dat$Morogoro))
-inits<-function()
-  list(a=rnorm(1,11),a3=rnorm(1,-0.01),a2=rnorm(1,0.1),b3=rnorm(1,-0.01),data.sd=runif(1,0,30))
-params<-c("a","a3","a2","b3","data.var")
-
-nc=3
-ni=10000
-nb=1000
-nt=10
-outMorogoroSen<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                     model.file="allmodelSen.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                     n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-plot(outMorogoroSen)
-outMorogoroSen
-
-###############################################################
-## both
-
-win.data<-list(data=dat$Morogoro,Age=dat$Age,nobs=length(dat$Morogoro))
-inits<-function()
-  list(a=rnorm(1,10),a1=rnorm(1,0.1),a2=rnorm(1,0.1),a3=rnorm(1,-0.01),b1=rnorm(1,-0.01),b3=rnorm(1,-10),data.sd=runif(1,1,30))
-params<-c("a","a1","a2","a3","b1","b3","data.var")
-nc=3
-ni=10000
-nb=1000
-nt=10
-outMorogoroSiler<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                       model.file="allmodelSiler.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                       n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-
-######################################################################
-# plotting
-#######################################################################
-
-tiff("Morogoro.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-plot(0:15,outMorogoroE$mean$a*exp(-outMorogoroE$mean$a2*dat$Age),ylab="Count",xlab="Age",type="l",ylim=c(0,50),main="Morogoro")
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outMorogoroE$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outMorogoroE$sims.list$a*exp(-outMorogoroE$sims.list$a2*dat$Age[i])
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey")
-points(0:15,UPB,type="l",col="grey") # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-lines(0:15,mean(outMorogoroSen$sims.list$a)*exp(-mean(outMorogoroSen$sims.list$a2)*dat$Age)*exp((-mean(outMorogoroSen$sims.list$a3)/mean(outMorogoroSen$sims.list$b3))*(1-exp(mean(outMorogoroSen$sims.list$b3)*dat$Age))),lty=2)
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outMorogoroSen$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outMorogoroSen$sims.list$a*exp(-outMorogoroSen$sims.list$a2*dat$Age[i])*exp((-outMorogoroSen$sims.list$a3/outMorogoroSen$sims.list$b3)*(1-exp(outMorogoroSen$sims.list$b3*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey",lty=2)
-points(0:15,UPB,type="l",col="grey",lty=2) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-lines(0:15,outMorogoroMat$mean$a*exp(-outMorogoroMat$mean$a2*dat$Age)*exp((-outMorogoroMat$mean$a1/outMorogoroMat$mean$b1)*(1-exp(-outMorogoroMat$mean$b1*dat$Age))),lty=3)
-predictions<-array(dim=c(length(dat$Age),length(outMorogoroMat$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outMorogoroMat$sims.list$a*exp(-outMorogoroMat$sims.list$a2*dat$Age[i])*exp((-outMorogoroMat$sims.list$a1/outMorogoroMat$sims.list$b1)*(1-exp(-outMorogoroMat$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey",lty=3)
-points(0:15,UPB,type="l",col="grey",lty=3) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-lines(0:15,outMorogoroSiler$mean$a*exp(-outMorogoroSiler$mean$a2*dat$Age)*exp((-outMorogoroSiler$mean$a3/outMorogoroSiler$mean$b3)*(1-exp(outMorogoroSiler$mean$b3*dat$Age)))*exp((-outMorogoroSiler$mean$a1/outMorogoroSiler$mean$b1)*(1-exp(-outMorogoroSiler$mean$b1*dat$Age))),lty=4)
-predictions<-array(dim=c(length(dat$Age),length(outMorogoroSiler$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outMorogoroSiler$sims.list$a*exp(-outMorogoroSiler$sims.list$a2*dat$Age[i])*exp((-outMorogoroSiler$sims.list$a3/outMorogoroSiler$sims.list$b3)*(1-exp(outMorogoroSiler$sims.list$b3*dat$Age[i])))*exp((-outMorogoroSiler$sims.list$a1/outMorogoroSiler$sims.list$b1)*(1-exp(-outMorogoroSiler$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey",lty=4)
-points(0:15,UPB,type="l",col="grey",lty=4) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
-       lty=1:4,bty="n")
-
-points(dat$Age,Morogoro,bg="black",pch=21)
-dev.off()
-
-min=min(outMorogoroE$DIC,outMorogoroMat$DIC,outMorogoroSen$DIC,outMorogoroSiler$DIC)
-
-tiff("MorogoroDIC.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-barplot(c(outMorogoroE$DIC-min,outMorogoroMat$DIC-min,outMorogoroSen$DIC-min,outMorogoroSiler$DIC-min),
-        names.arg=c("Constant","Maturation","Senescence","Both"))
-dev.off()
-
-tiff("MorogoroSilerParDist.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-par(mfrow=c(3,2))
-hist(outMorogoroSiler$sims.list$a, main="a",xlab="",col="grey")
-abline(v=outMorogoroSiler$mean$a,col="red")
-hist(outMorogoroSiler$sims.list$a1, main="a1",xlab="",col="grey")
-abline(v=outMorogoroSiler$mean$a1,col="red")
-hist(outMorogoroSiler$sims.list$a2, main="a2",xlab="",col="grey")
-abline(v=outMorogoroSiler$mean$a2,col="red")
-hist(outMorogoroSiler$sims.list$a3, main="a3",xlab="",col="grey")
-abline(v=outMorogoroSiler$mean$a3,col="red")
-hist(outMorogoroSiler$sims.list$b1, main="b1",xlab="",col="grey")
-abline(v=outMorogoroSiler$mean$b1,col="red")
-hist(outMorogoroSiler$sims.list$b3, main="b3",xlab="",col="grey")
-abline(v=outMorogoroSiler$mean$b3,col="red")
-dev.off()
-
-###############################################################################
-## calculate survival lx-1/lx
-par(mfrow=c(1,1))
-######################################
-
-MorogoroSConst<-outMorogoroE$mean$a*exp(-outMorogoroE$mean$a2*dat$Age)
-MorogoroSSen<-outMorogoroSen$mean$a*exp(-outMorogoroSen$mean$a2*dat$Age)*exp((-outMorogoroSen$mean$a3/outMorogoroSen$mean$b3)*(1-exp(outMorogoroSen$mean$b3*dat$Age)))
-MorogoroSMat<-outMorogoroMat$mean$a*exp(-outMorogoroMat$mean$a2*dat$Age)*exp((-outMorogoroMat$mean$a1/outMorogoroMat$mean$b1)*(1-exp(-outMorogoroMat$mean$b1*dat$Age)))
-MorogoroSSiler<-outMorogoroSiler$mean$a*exp(-outMorogoroSiler$mean$a2*dat$Age)*exp((-outMorogoroSiler$mean$a3/outMorogoroSiler$mean$b3)*(1-exp(outMorogoroSiler$mean$b3*dat$Age)))*exp((-outMorogoroSiler$mean$a1/outMorogoroSiler$mean$b1)*(1-exp(-outMorogoroSiler$mean$b1*dat$Age)))
-############################
-
-MorogoropConst=(MorogoroSConst[1:15+1])/(MorogoroSConst[1:15])
-MorogoropSen=(MorogoroSSen[1:15+1])/(MorogoroSSen[1:15])
-MorogoropMat=(MorogoroSMat[1:15+1])/(MorogoroSMat[1:15])
-MorogoropSiler=(MorogoroSSiler[1:15+1])/(MorogoroSSiler[1:15])
-
-tiff("MorogoroS.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-plot(0:14,MorogoropConst,ylim=c(0,1),type="l",xlab="Age",ylab="Survival",main="Morogoro")
-lines(0:14,MorogoropSen,lty=2)
-lines(0:14,MorogoropMat,lty=3)
-lines(0:14,MorogoropSiler,lty=4)
-dev.off()
-
-
-##########################################
-## run code for DarEsSalaam
-########################################
-# constant
-
-win.data<-list(data=dat$DarEsSalaam,Age=dat$Age,nobs=length(dat$DarEsSalaam))
-inits<-function()
-  list(a=rnorm(1,30),a2=rnorm(1,0),data.sd=runif(1,1,30))
-params<-c("a","a2","data.var")
-nc=3
-ni=10000
-nb=1000
-nt=1
-outDarEsSalaamE<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                      model.file="allmodel.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                      n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-plot(outDarEsSalaamE)
-hist(outDarEsSalaamE$sims.list$a2)
-
-######################################################
-# mat
-
-win.data<-list(data=dat$DarEsSalaam,Age=dat$Age,nobs=length(dat$DarEsSalaam))
-inits<-function()
-  list(a=rnorm(1,9),a1=rnorm(1,1),a2=rnorm(1,0.1),b1=rnorm(1,1),data.sd=runif(1,0,30))
-params<-c("a","a1","a2","b1","data.var")
-
-nc=3
-ni=10000
-nb=1000
-nt=1
-outDarEsSalaamMat<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                        model.file="allmodelMature.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                        n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-plot(outDarEsSalaamMat)
-hist(outDarEsSalaamMat$sims.list$a2)
-outDarEsSalaamMat
-
-################################################################
-# sen
-
-win.data<-list(data=dat$DarEsSalaam,Age=dat$Age,nobs=length(dat$DarEsSalaam))
-inits<-function()
-  list(a=rnorm(1,7.4),a3=rnorm(1,-0.01),a2=rnorm(1,0.1),b3=rnorm(1,-0.1),data.sd=runif(1,0,30))
-params<-c("a","a3","a2","b3","data.var")
-
-nc=3
-ni=10000
-nb=1000
-nt=10
-outDarEsSalaamSen<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                        model.file="allmodelSen.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                        n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-plot(outDarEsSalaamSen)
-outDarEsSalaamSen
-
-###############################################################
-## both
-
-win.data<-list(data=dat$DarEsSalaam,Age=dat$Age,nobs=length(dat$DarEsSalaam))
-inits<-function()
-  list(a=rnorm(1,10),a1=rnorm(1,0.1),a2=rnorm(1,0.1),a3=rnorm(1,-0.01),b1=rnorm(1,-0.01),b3=rnorm(1,-10),data.sd=runif(1,1,30))
-params<-c("a","a1","a2","a3","b1","b3","data.var")
-nc=3
-ni=10000
-nb=1000
-nt=10
-outDarEsSalaamSiler<-bugs(data=win.data,inits=inits,parameters.to.save=params,
-                          model.file="allmodelSiler.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
-                          n.iter=ni,debug=T,DIC=T,working.directory=getwd())
-
-#####################################################################################
-# both
-#####################################################################################
-
-tiff("Dar.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-
-plot(0:15,outDarEsSalaamE$mean$a*exp(-outDarEsSalaamE$mean$a2*dat$Age),ylab="Count",xlab="Age",type="l",ylim=c(0,30),main="Dar Es Salaam")
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outDarEsSalaamE$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outDarEsSalaamE$sims.list$a*exp(-outDarEsSalaamE$sims.list$a2*dat$Age[i])
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey")
-points(0:15,UPB,type="l",col="grey") # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-lines(0:15,outDarEsSalaamSen$mean$a*exp(-outDarEsSalaamSen$mean$a2*dat$Age)*exp((-outDarEsSalaamSen$mean$a3/outDarEsSalaamSen$mean$b3)*(1-exp(outDarEsSalaamSen$mean$b3*dat$Age))),lty=2)
-## plot CI
-predictions<-array(dim=c(length(dat$Age),length(outDarEsSalaamSen$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outDarEsSalaamSen$sims.list$a*exp(-outDarEsSalaamSen$sims.list$a2*dat$Age[i])*exp((-outDarEsSalaamSen$sims.list$a3/outDarEsSalaamSen$sims.list$b3)*(1-exp(outDarEsSalaamSen$sims.list$b3*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey",lty=2)
-points(0:15,UPB,type="l",col="grey",lty=2) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-lines(0:15,outDarEsSalaamMat$mean$a*exp(-outDarEsSalaamMat$mean$a2*dat$Age)*exp((-outDarEsSalaamMat$mean$a1/outDarEsSalaamMat$mean$b1)*(1-exp(-outDarEsSalaamMat$mean$b1*dat$Age))),lty=3)
-predictions<-array(dim=c(length(dat$Age),length(outDarEsSalaamMat$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outDarEsSalaamMat$sims.list$a*exp(-outDarEsSalaamMat$sims.list$a2*dat$Age[i])*exp((-outDarEsSalaamMat$sims.list$a1/outDarEsSalaamMat$sims.list$b1)*(1-exp(-outDarEsSalaamMat$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey",lty=3)
-points(0:15,UPB,type="l",col="grey",lty=3) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-
-lines(0:15,outDarEsSalaamSiler$mean$a*exp(-outDarEsSalaamSiler$mean$a2*dat$Age)*exp((-outDarEsSalaamSiler$mean$a3/outDarEsSalaamSiler$mean$b3)*(1-exp(outDarEsSalaamSiler$mean$b3*dat$Age)))*exp((-outDarEsSalaamSiler$mean$a1/outDarEsSalaamSiler$mean$b1)*(1-exp(-outDarEsSalaamSiler$mean$b1*dat$Age))),lty=4)
-predictions<-array(dim=c(length(dat$Age),length(outDarEsSalaamSiler$sims.list$a)))
-for (i in 1:length(dat$Age)){
-  predictions[i,]<-outDarEsSalaamSiler$sims.list$a*exp(-outDarEsSalaamSiler$sims.list$a2*dat$Age[i])*exp((-outDarEsSalaamSiler$sims.list$a3/outDarEsSalaamSiler$sims.list$b3)*(1-exp(outDarEsSalaamSiler$sims.list$b3*dat$Age[i])))*exp((-outDarEsSalaamSiler$sims.list$a1/outDarEsSalaamSiler$sims.list$b1)*(1-exp(-outDarEsSalaamSiler$sims.list$b1*dat$Age[i])))
-}
-LPB<-apply(predictions,1,quantile,probs=0.025)
-UPB<-apply(predictions,1,quantile,probs=0.975)
-points(0:15,LPB,type="l",col="grey",lty=4)
-points(0:15,UPB,type="l",col="grey",lty=4) # check 1 or 0 start
-polygon(c(rev(dat$Age), dat$Age), c(rev(LPB),UPB), col =  "#00000010", border = NA)
-legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
-       lty=1:4,bty="n")
-points(dat$Age,DarEsSalaam,bg="black",pch=21)
-dev.off()
-
-tiff("DarDIC.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-min=min(outDarEsSalaamE$DIC,outDarEsSalaamMat$DIC,outDarEsSalaamSen$DIC,outDarEsSalaamSiler$DIC)
-barplot(c(outDarEsSalaamE$DIC-min,outDarEsSalaamMat$DIC-min,outDarEsSalaamSen$DIC-min,outDarEsSalaamSiler$DIC-min),
-        names.arg=c("Constant","Maturation","Senescence","Both"))
-dev.off()
-
-tiff("DarSilerParDist.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-par(mfrow=c(3,2))
-hist(outDarEsSalaamSiler$sims.list$a, main="a",xlab="",col="grey")
-abline(v=outDarEsSalaamSiler$mean$a,col="red")
-hist(outDarEsSalaamSiler$sims.list$a1, main="a1",xlab="",col="grey")
-abline(v=outDarEsSalaamSiler$mean$a1,col="red")
-hist(outDarEsSalaamSiler$sims.list$a2, main="a2",xlab="",col="grey")
-abline(v=outDarEsSalaamSiler$mean$a2,col="red")
-hist(outDarEsSalaamSiler$sims.list$a3, main="a3",xlab="",col="grey")
-abline(v=outDarEsSalaamSiler$mean$a3,col="red")
-hist(outDarEsSalaamSiler$sims.list$b1, main="b1",xlab="",col="grey")
-abline(v=outDarEsSalaamSiler$mean$b1,col="red")
-hist(outDarEsSalaamSiler$sims.list$b3, main="b3",xlab="",col="grey")
-abline(v=outDarEsSalaamSiler$mean$b3,col="red")
-dev.off()
-###############################################################################
-## calculate survival lx-1/lx
-par(mfrow=c(1,1))
-######################################
-
-DarEsSalaamSConst<-outDarEsSalaamE$mean$a*exp(-outDarEsSalaamE$mean$a2*dat$Age)
-DarEsSalaamSSen<-outDarEsSalaamSen$mean$a*exp(-outDarEsSalaamSen$mean$a2*dat$Age)*exp((-outDarEsSalaamSen$mean$a3/outDarEsSalaamSen$mean$b3)*(1-exp(outDarEsSalaamSen$mean$b3*dat$Age)))
-DarEsSalaamSMat<-outDarEsSalaamMat$mean$a*exp(-outDarEsSalaamMat$mean$a2*dat$Age)*exp((-outDarEsSalaamMat$mean$a1/outDarEsSalaamMat$mean$b1)*(1-exp(-outDarEsSalaamMat$mean$b1*dat$Age)))
-DarEsSalaamSSiler<-outDarEsSalaamSiler$mean$a*exp(-outDarEsSalaamSiler$mean$a2*dat$Age)*exp((-outDarEsSalaamSiler$mean$a3/outDarEsSalaamSiler$mean$b3)*(1-exp(outDarEsSalaamSiler$mean$b3*dat$Age)))*exp((-outDarEsSalaamSiler$mean$a1/outDarEsSalaamSiler$mean$b1)*(1-exp(-outDarEsSalaamSiler$mean$b1*dat$Age)))
-############################
-DarEsSalaampConst=(DarEsSalaamSConst[1:15+1])/(DarEsSalaamSConst[1:15])
-DarEsSalaampSen=(DarEsSalaamSSen[1:15+1])/(DarEsSalaamSSen[1:15])
-DarEsSalaampMat=(DarEsSalaamSMat[1:15+1])/(DarEsSalaamSMat[1:15])
-DarEsSalaampSiler=(DarEsSalaamSSiler[1:15+1])/(DarEsSalaamSSiler[1:15])
-
-tiff("DarS.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-plot(0:14,DarEsSalaampConst,ylim=c(0,1),type="l",xlab="Age",ylab="Survival",main="Dar Es Salaam")
-lines(0:14,DarEsSalaampSen,lty=2)
-lines(0:14,DarEsSalaampMat,lty=3)
-lines(0:14,DarEsSalaampSiler,lty=4)
-dev.off()
-######################################
+## only run when all the country's data are available
 
 ## plot expectation
 ## survival vs population size
@@ -987,11 +363,20 @@ mtext("Low",side=1,at=0)
 legend("left",legend=c("Additive","Compensatory"),
        lty=c(2,2),bty="n",col=1:2)
 ## add data
-points(x=c(100000),y=c(GhanapConst[1]),pch=1)
-points(x=c(10000),y=c(MorogoropConst[1]),pch=2)
-points(x=c(5000),y=c(SaoTomepConst[1]),pch=3)
-points(x=c(20000),y=c(PrincipepConst[1]),pch=4)
-points(x=c(6000),y=c(DarEsSalaampConst[1]),pch=5)
+# y<-read.table(paste(file_name,"const_life_table.csv",sep=""))
+# OR
+yG <-read.table("Ghanaconst_life_table.csv")
+yM <-read.table("Morogoroconst_life_table.csv")
+yS <-read.table("SaoTomeconst_life_table.csv")
+yP <-read.table("Principeconst_life_table.csv")
+yD <-read.table("DarEsSalaamconst_life_table.csv")
+
+### list countries
+points(x=c(100000),y=yG$constp[1],pch=1)
+points(x=c(10000),y=yM$constp[1],pch=2)
+points(x=c(5000),y=yS$constp[1],pch=3)
+points(x=c(20000),y=yP$constp[1],pch=4)
+points(x=c(6000),y=yD$constp[1],pch=5)
 
 legend("bottomleft",legend=c("Ghana","Morogoro","Sao Tome","Principe","Dar Es Salaam"),
        pch=1:5,bty="n")
@@ -1011,67 +396,12 @@ legend("left",legend=c("Additive","Compensatory"),
        lty=c(2,2),bty="n",col=1:2)
 
 ## add data
-points(x=c(0.5),y=c(GhanapConst[1]),pch=1)
-points(x=c(0),y=c(MorogoropConst[1]),pch=2)
-points(x=c(1),y=c(SaoTomepConst[1]),pch=3)
-points(x=c(0),y=c(PrincipepConst[1]),pch=4)
-points(x=c(0),y=c(DarEsSalaampConst[1]),pch=5)
+points(x=c(0.5),y=yG$constp[1],pch=1)
+points(x=c(0),y=yM$constp[1],pch=2)
+points(x=c(1),y=yS$constp[1],pch=3)
+points(x=c(0),y=yP$constp[1],pch=4)
+points(x=c(0),y=yD$constp[1],pch=5)
 
 legend("bottomleft",legend=c("Ghana","Morogoro","Sao Tome","Principe","Dar Es Salaam"),
        pch=1:5,bty="n")
 dev.off()
-
-#### save results for tables
-## const
-write.table(x=outGhanaE$summary,file="GhanaConst.csv",sep=",")
-write.table(x=outGhanaE$DIC,file="GhanaConstDIC.csv",sep=",")
-write.table(x=outPrincipeE$summary,file="PrincipeConst.csv",sep=",")
-write.table(x=outPrincipeE$DIC,file="PrincipeConstDIC.csv",sep=",")
-write.table(x=outSaoTomeE$summary,file="SaoTomeConst.csv",sep=",")
-write.table(x=outSaoTomeE$DIC,file="SaoTomeConstDIC.csv",sep=",")
-write.table(x=outMorogoroE$summary,file="MorogoroConst.csv",sep=",")
-write.table(x=outMorogoroE$DIC,file="MorogoroConstDIC.csv",sep=",")
-write.table(x=outDarEsSalaamE$summary,file="DarEsSalaamConst.csv",sep=",")
-write.table(x=outDarEsSalaamE$DIC,file="DarEsSalaamConstDIC.csv",sep=",")
-
-## sen
-write.table(x=outGhanaSen$summary,file="GhanaSen.csv",sep=",")
-write.table(x=outGhanaSen$DIC,file="GhanaSenDIC.csv",sep=",")
-write.table(x=outPrincipeSen$summary,file="PrincipeSen.csv",sep=",")
-write.table(x=outPrincipeSen$DIC,file="PrincipeSenDIC.csv",sep=",")
-write.table(x=outSaoTomeSen$summary,file="SaoTomeSen.csv",sep=",")
-write.table(x=outSaoTomeSen$DIC,file="SaoTomeSenDIC.csv",sep=",")
-write.table(x=outMorogoroSen$summary,file="MorogoroSen.csv",sep=",")
-write.table(x=outMorogoroSen$DIC,file="MorogoroSenDIC.csv",sep=",")
-write.table(x=outDarEsSalaamSen$summary,file="DarEsSalaamSen.csv",sep=",")
-write.table(x=outDarEsSalaamSen$DIC,file="DarEsSalaamSenDIC.csv",sep=",")
-write.table(x=outGhanaSen$summary,file="GhanaSen.csv",sep=",")
-write.table(x=outGhanaSen$DIC,file="GhanaSenDIC.csv",sep=",")
-
-## mat
-write.table(x=outPrincipeMat$summary,file="PrincipeMat.csv",sep=",")
-write.table(x=outPrincipeMat$DIC,file="PrincipeMatDIC.csv",sep=",")
-write.table(x=outSaoTomeMat$summary,file="SaoTomeMat.csv",sep=",")
-write.table(x=outSaoTomeMat$DIC,file="SaoTomeMatDIC.csv",sep=",")
-write.table(x=outMorogoroMat$summary,file="MorogoroMat.csv",sep=",")
-write.table(x=outMorogoroMat$DIC,file="MorogoroMatDIC.csv",sep=",")
-write.table(x=outDarEsSalaamMat$summary,file="DarEsSalaamMat.csv",sep=",")
-write.table(x=outDarEsSalaamMat$DIC,file="DarEsSalaamMatDIC.csv",sep=",")
-
-## both
-write.table(x=outGhanaSiler$summary,file="GhanaSiler.csv",sep=",")
-write.table(x=outGhanaSiler$DIC,file="GhanaSilerDIC.csv",sep=",")
-write.table(x=outPrincipeSiler$summary,file="PrincipeSiler.csv",sep=",")
-write.table(x=outPrincipeSiler$DIC,file="PrincipeSilerDIC.csv",sep=",")
-write.table(x=outSaoTomeSiler$summary,file="SaoTomeSiler.csv",sep=",")
-write.table(x=outSaoTomeSiler$DIC,file="SaoTomeSilerDIC.csv",sep=",")
-write.table(x=outMorogoroSiler$summary,file="MorogoroSiler.csv",sep=",")
-write.table(x=outMorogoroSiler$DIC,file="MorogoroSilerDIC.csv",sep=",")
-write.table(x=outDarEsSalaamSiler$summary,file="DarEsSalaamSiler.csv",sep=",")
-write.table(x=outDarEsSalaamSiler$DIC,file="DarEsSalaamSilerDIC.csv",sep=",")
-
-## constant survival rates for regression
-constantS<-round(c(GhanapConst[1],PrincipepConst[1],SaoTomepConst[1],MorogoropConst[1],DarEsSalaampConst[1]),3)
-constantS<-as.data.frame(constantS)
-row.names(constantS)<-c("Ghana","Principe","SaoTome","Morogoro","DarEsSalaam")
-write.table(x=constantS,file="constantSregression.csv",sep=",")
