@@ -404,25 +404,12 @@ dev.off()
 detach(dat)
 
 ########################################
-###
-###
-###
-###
-###
-###
-###
-###
-###
-###
-######################################
 ### only run when all the country's data are available
-###
-###
-
 ## plot expectation
 ## survival vs population size
 ## additive 0.9 constant across N
 ## compensatory declines across N
+
 pdf("compensationVsN.pdf",width=12,height=8)
 #tiff("compensationVsN.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
 plot(c(0,100000), c(0,1), ylab = "Survival", xlab = "Population size",type="n",xaxt="n")
@@ -452,6 +439,7 @@ points(x=c(6000),y=yD$constp[1],pch=5)
 legend("bottomleft",legend=c("Ghana","Morogoro","Sao Tome","Principe","Dar Es Salaam"),
        pch=1:5,bty="n")
 dev.off()
+
 ## survival vs harvest
 ## additive decline
 ## conpensatory - const till xs
@@ -477,3 +465,13 @@ points(x=c(0),y=yD$constp[1],pch=5)
 legend("bottomleft",legend=c("Ghana","Morogoro","Sao Tome","Principe","Dar Es Salaam"),
        pch=1:5,bty="n")
 dev.off()
+
+const_s_regression<-c(
+yG$constp[1],
+yM$constp[1],
+yS$constp[1],
+yP$constp[1],
+yD$constp[1])
+cres<-as.data.frame(const_s_regression)
+rownames(cres)<-c("Ghana","Morogoro","SaoTome","Principe","DarEsSalaam")
+write.csv(cres,"constSreg_data.csv")
