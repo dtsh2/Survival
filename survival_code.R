@@ -7,8 +7,12 @@ rm(list=ls())
 dat <- read.csv("weightedAge.csv")
 #dat<-dat[1:14,1:8]
 attach(dat)
-
 ## must detach at end of run - see end code
+
+pdf("age_data.pdf",height=6,width=8)
+barplot(as.matrix(dat[3:8]), main="", ylab="Count",xlab='Age', beside=TRUE, 
+        col='grey')
+dev.off()
 #####################
 
 # openbugs
@@ -410,7 +414,7 @@ detach(dat)
 ## additive 0.9 constant across N
 ## compensatory declines across N
 
-pdf("compensationVsN.pdf",width=12,height=8)
+pdf("compensationVsN.pdf",width=6,height=6)
 #tiff("compensationVsN.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
 plot(c(0,100000), c(0,1), ylab = "Survival", xlab = "Population size",type="n",xaxt="n")
 ## the x- and y-axis, and an integer grid
@@ -443,7 +447,7 @@ dev.off()
 ## survival vs harvest
 ## additive decline
 ## conpensatory - const till xs
-pdf("compensationVsHarvest.pdf",width=12,height=8)
+pdf("compensationVsHarvest.pdf",width=6,height=6)
 #tiff("compensationVsHarvest.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
 plot(c(0,1), c(0,1), ylab = "Survival", xlab = "Harvest",type="n",xaxt="n")
 ## the x- and y-axis, and an integer grid
