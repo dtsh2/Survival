@@ -6,8 +6,7 @@ initial values loaded but chain contains uninitialized variables
 initial values loaded but chain contains uninitialized variables
 initial values generated, model initialized
 model is updating
-1000 updates took 7 s
-inference can not be made when sampler is in adaptive phase
+1000 updates took 4 s
 inference can not be made when sampler is in adaptive phase
 inference can not be made when sampler is in adaptive phase
 inference can not be made when sampler is in adaptive phase
@@ -17,7 +16,7 @@ inference can not be made when sampler is in adaptive phase
 inference can not be made when sampler is in adaptive phase
 DIC can not be monitored when model in adapting phase
 model is updating
-9000 updates took 63 s
+9000 updates took 41 s
 CODA files written
 no monitors set
 DIC monitor not set

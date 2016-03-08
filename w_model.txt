@@ -1,0 +1,15 @@
+    
+  model{
+    alpha_1~dunif(0,1000)
+    alpha_2~dnorm(0,3)
+    alpha_3~dnorm(0,3)
+
+    precision<-1/data.var
+    data.var<-data.sd*data.sd
+    data.sd~dunif(0,100)
+    
+    for (i in 1:nobs){
+    data[i]~dnorm(mu[i],precision)
+    mu[i]<-alpha_1*pow((alpha_2*alpha_3*Age[i]),(alpha_2-1))
+    }
+    }
