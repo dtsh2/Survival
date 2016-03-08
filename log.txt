@@ -1,11 +1,12 @@
 model is syntactically correct
 data loaded
 model compiled
-initial values loaded but chain contains uninitialized variables
-initial values loaded but chain contains uninitialized variables
-initial values loaded but chain contains uninitialized variables
-initial values generated, model initialized
+initial values loaded and chain initialized but another chain contains uninitialized variables
+initial values loaded and chain initialized but another chain contains uninitialized variables
+model is initialized
+model is already initialized
 model is updating
+<<<<<<< HEAD
 1000 updates took 4 s
 inference can not be made when sampler is in adaptive phase
 inference can not be made when sampler is in adaptive phase
@@ -17,7 +18,20 @@ inference can not be made when sampler is in adaptive phase
 DIC can not be monitored when model in adapting phase
 model is updating
 9000 updates took 41 s
+=======
+1000 updates took 0 s
+model is updating
+9000 updates took 0 s
+>>>>>>> origin/master
 CODA files written
-no monitors set
-DIC monitor not set
+Summary statistics
+		mean	sd	val2.5pc	median	val97.5pc	sample
+	a	228.2	40.54	150.8	227.1	312.2	27000
+	a2	0.1372	0.04299	0.06574	0.133	0.2346	27000
+	data.var	3589.0	1497.0	1632.0	3267.0	7482.0	27000
+	deviance	174.2	2.84	170.8	173.5	181.4	27000
+Deviance information
+	Dbar	Dhat	DIC	pD	
+data	174.2	171.5	177.0	2.762
+total	174.2	171.5	177.0	2.762
 History

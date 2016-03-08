@@ -7,8 +7,12 @@ rm(list=ls())
 dat <- read.csv("weightedAge.csv")
 #dat<-dat[1:14,1:8]
 attach(dat)
-
 ## must detach at end of run - see end code
+
+pdf("age_data.pdf",height=6,width=8)
+barplot(as.matrix(dat[3:8]), main="", ylab="Count",xlab='Age', beside=TRUE, 
+        col='grey')
+dev.off()
 #####################
 
 # openbugs
@@ -29,15 +33,22 @@ paramsB<-c("a","a1","a2","a3","b1","b3","data.var")
 paramsMS<-c("a","a1","a3","b1","b3","data.var")
 
 # choose country
-country = Morogoro # Allpops/Bioko/Ghana/Principe/SaoTome/DarEsSalaam/Morogoro
-file_name = "Morogoro"
+country = Ghana # Allpops/Bioko/Ghana/Principe/SaoTome/DarEsSalaam/Morogoro
+file_name = "Ghana"
 
 # read initial conditions
+<<<<<<< HEAD
 initC<-constant_init$Morogoro
 initS<-sen_init$Morogoro
 initM<-mat_init$Morogoro
 initB<-both_init$Morogoro
 initMS<-sen_mat_init$Morogoro
+=======
+initC<-constant_init$Ghana
+initS<-sen_init$Ghana
+initM<-mat_init$Ghana
+initB<-both_init$Ghana
+>>>>>>> origin/master
 
 # data
 win.data<-list(data=country,Age=Age,nobs=length(country))
@@ -89,6 +100,7 @@ outB<-bugs(data=win.data,inits=inits,parameters.to.save=paramsB,
                       n.iter=ni,debug=T,DIC=T,working.directory=getwd())
 write.table(x=outB$summary,file=paste(file_name,'Both.csv',sep=""))
 
+<<<<<<< HEAD
 ###############################################################
 ## both
 
@@ -99,6 +111,17 @@ outMS<-bugs(data=win.data,inits=inits,parameters.to.save=paramsMS,
            model.file="allmodelMatSen.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
            n.iter=ni,debug=T,DIC=T,working.directory=getwd())
 write.table(x=outMS$summary,file=paste(file_name,'MatSen.csv',sep=""))
+=======
+## const with declining population for sens analysis
+
+inits<-function()
+  initC
+outCr<-bugs(data=win.data,inits=inits,parameters.to.save=paramsC,
+           model.file="allmodelr.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+           n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+
+write.table(x=outCr$summary,file=paste(file_name,'Constr.csv',sep=""))
+>>>>>>> origin/master
 
 ##############################################################
 ## models and predictions for plotting
@@ -112,6 +135,18 @@ for (i in 1:length(Age)){
 }
 LPBc<-apply(predictionsC,1,quantile,probs=0.025)
 UPBc<-apply(predictionsC,1,quantile,probs=0.975)
+
+## const r
+
+constr<-outCr$mean$a*exp(-outCr$mean$a2*Age)
+
+predictionsCr<-array(dim=c(length(Age),length(outCr$sims.list$a)))
+for (i in 1:length(Age)){
+  predictionsCr[i,]<-outCr$sims.list$a*exp(-outCr$sims.list$a2*Age[i])
+}
+LPBcr<-apply(predictionsCr,1,quantile,probs=0.025)
+UPBcr<-apply(predictionsCr,1,quantile,probs=0.975)
+
 
 ## sen
 sen<-outS$mean$a*exp(-outS$mean$a2*Age)*exp((-outS$mean$a3/outS$mean$b3)*(1-exp(outS$mean$b3*Age)))
@@ -155,13 +190,16 @@ UPBms<-apply(predictionsMS,1,quantile,probs=0.975)
 
 ## plotting
 
-tiff(paste(file_name,'.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
+pdf(paste(file_name,'.pdf', sep=''),width=12, height=6)
+#tiff(paste(file_name,'.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
 
 plot(0:15,const,ylab="Count",xlab="Age",type="l",ylim=c(0,max(country,na.rm=T)+20),main=file_name)
 ## plot CI
 points(0:15,LPBc,type="l",col="grey")
 points(0:15,UPBc,type="l",col="grey") # check 1 or 0 start
 polygon(c(rev(Age), Age), c(rev(LPBc),UPBc), col =  "#00000010", border = NA)
+
+#####
 
 lines(0:15,sen,lty=2)
 points(0:15,LPBs,type="l",col="grey",lty=2)
@@ -189,6 +227,31 @@ points(Age,country,bg="black",pch=21)
 
 dev.off()
 
+## r vs constant pop size
+pdf(paste(file_name,'dec_stable.pdf', sep=''),width=12, height=6)
+
+#tiff(paste(file_name,'dec_stable.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
+
+plot(0:15,const,ylab="Count",xlab="Age",type="l",ylim=c(0,max(country,na.rm=T)+20),main=file_name)
+## plot CI
+points(0:15,LPBc,type="l",col="grey")
+points(0:15,UPBc,type="l",col="grey") # check 1 or 0 start
+polygon(c(rev(Age), Age), c(rev(LPBc),UPBc), col =  "#00000010", border = NA)
+
+lines(0:15,constr,col='red')
+## plot CI
+points(0:15,LPBcr,type="l",col="red")
+points(0:15,UPBcr,type="l",col="red") # check 1 or 0 start
+polygon(c(rev(Age), Age), c(rev(LPBcr),UPBcr), col =  rgb(1,0,0,alpha=0.1) , border = NA)
+
+legend("topright",legend=c("Constant, r = 0","Constant, r = -0.05"),
+       lty=1,bty="n",col=c("black",rgb(1,0,0,alpha=0.5)))
+points(Age,country,bg="black",pch=21)
+
+dev.off()
+
+#####
+
 ## DIC model selection
 
 x=cbind(outC$DIC,outM$DIC,outS$DIC,outB$DIC,outMS$DIC)
@@ -197,15 +260,23 @@ write.table(x,file=paste(file_name,'DIC.csv',sep=""))
 
 min=min(outC$DIC,outM$DIC,outS$DIC,outB$DIC,outMS$DIC)
 
+<<<<<<< HEAD
 tiff(paste(file_name,'dic.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
 barplot(c(outC$DIC-min,outM$DIC-min,outS$DIC-min,outB$DIC-min,outMS$DIC-min),
         names.arg=c("Constant","Maturation","Senescence","Siler","Mat-Sen"))
+=======
+pdf(paste(file_name,'dic.pdf', sep=''),width=6,height=8)
+#tiff(paste(file_name,'dic.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
+barplot(c(outC$DIC-min,outM$DIC-min,outS$DIC-min,outB$DIC-min),
+        names.arg=c("Constant","Maturation","Senescence","Both"))
+>>>>>>> origin/master
 dev.off()
 
 # pars distributions
 
 # const
-tiff(paste(file_name,'pars_const.tiff', sep=''),width=8,height=3,units='in',res=300, compression = "lzw")
+pdf(paste(file_name,'pars_const.pdf', sep=''),width=12,height=4)
+#tiff(paste(file_name,'pars_const.tiff', sep=''),width=8,height=3,units='in',res=300, compression = "lzw")
 par(mfrow=c(1,2))
 hist(outC$sims.list$a, main="a",xlab="",col="grey")
 abline(v=outC$mean$a,col="red")
@@ -214,7 +285,8 @@ abline(v=outC$mean$a2,col="red")
 dev.off()
 
 # mat
-tiff(paste(file_name,'pars_mat.tiff', sep=''),width=8,height=6,units='in',res=300, compression = "lzw")
+pdf(paste(file_name,'pars_mat.pdf', sep=''),width=12,height=8)
+#tiff(paste(file_name,'pars_mat.tiff', sep=''),width=8,height=6,units='in',res=300, compression = "lzw")
 par(mfrow=c(2,2))
 hist(outM$sims.list$a, main="a",xlab="",col="grey")
 abline(v=outM$mean$a,col="red")
@@ -227,7 +299,8 @@ abline(v=outM$mean$b1,col="red")
 dev.off()
 
 # sen
-tiff(paste(file_name,'pars_sen.tiff', sep=''),width=8,height=6,units='in',res=300, compression = "lzw")
+pdf(paste(file_name,'pars_sen.pdf', sep=''),width=12,height=8)
+#tiff(paste(file_name,'pars_sen.tiff', sep=''),width=8,height=6,units='in',res=300, compression = "lzw")
 par(mfrow=c(2,2))
 hist(outS$sims.list$a, main="a",xlab="",col="grey")
 abline(v=outS$mean$a,col="red")
@@ -240,7 +313,8 @@ abline(v=outS$mean$b3,col="red")
 dev.off()
 
 # both
-tiff(paste(file_name,'pars_siler.tiff', sep=''),width=8,height=9,units='in',res=300, compression = "lzw")
+pdf(paste(file_name,'pars_siler.pdf', sep=''),width=12,height=8)
+#tiff(paste(file_name,'pars_siler.tiff', sep=''),width=8,height=9,units='in',res=300, compression = "lzw")
 par(mfrow=c(3,2))
 hist(outB$sims.list$a, main="a",xlab="",col="grey")
 abline(v=outB$mean$a,col="red")
@@ -273,7 +347,8 @@ dev.off()
 
 # plotting posterior vs priors
 
-tiff(paste(file_name,'siler_post_pri.tiff', sep=''),width=8,height=9,units='in',res=300, compression = "lzw")
+pdf(paste(file_name,'siler_post_pri.pdf', sep=''),width=12,height=8)
+#tiff(paste(file_name,'siler_post_pri.tiff', sep=''),width=8,height=9,units='in',res=300, compression = "lzw")
 par(mfrow=c(3,2))
 plot(density(outB$sims.list$a), main="a",xlab="")
 polygon(density(outB$sims.list$a), col =  "#00000010", border = NA)
@@ -292,7 +367,7 @@ polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
 
 plot(density(outB$sims.list$a3), main="a3",xlab="")
 polygon(density(outB$sims.list$a3), col =  "#00000010", border = NA)
-lines(density((rnorm(1:1000,mean=0,sd=10))),,col="red")
+lines(density((rnorm(1:1000,mean=0,sd=10))),col="red")
 polygon(density((rnorm(1:1000,mean=0,sd=10))), col =  "#FF000010", border = NA)
 
 plot(density(outB$sims.list$b1), main="b1",xlab="")
@@ -400,7 +475,8 @@ write.table(x=cbind(mat_sen,msd,msq,msp,msP),file=paste(file_name,'mat_sen_life_
 
 #####
 
-tiff(paste(file_name,'_ST.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
+pdf(paste(file_name,'_ST.pdf', sep=''),width=6,height=6)
+#tiff(paste(file_name,'_ST.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
 plot(0:15,constp,ylim=c(0,1),type="l",xlab="Age",ylab="Survival",main=file_name)
 lines(0:15,senp,lty=2)
 lines(0:15,matp,lty=3)
@@ -409,14 +485,15 @@ lines(0:15,msp,lty=5)
 dev.off()
 detach(dat)
 
-######################################
-## only run when all the country's data are available
-
+########################################
+### only run when all the country's data are available
 ## plot expectation
 ## survival vs population size
 ## additive 0.9 constant across N
 ## compensatory declines across N
-tiff("compensationVsN.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
+
+pdf("compensationVsN.pdf",width=6,height=6)
+#tiff("compensationVsN.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
 plot(c(0,100000), c(0,1), ylab = "Survival", xlab = "Population size",type="n",xaxt="n")
 ## the x- and y-axis, and an integer grid
 lines(x=c(0,100000),y=c(0.8,0.8),lty=2,col=1)
@@ -444,10 +521,12 @@ points(x=c(6000),y=yD$constp[1],pch=5)
 legend("bottomleft",legend=c("Ghana","Morogoro","Sao Tome","Principe","Dar Es Salaam"),
        pch=1:5,bty="n")
 dev.off()
+
 ## survival vs harvest
 ## additive decline
 ## conpensatory - const till xs
-tiff("compensationVsHarvest.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
+pdf("compensationVsHarvest.pdf",width=6,height=6)
+#tiff("compensationVsHarvest.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
 plot(c(0,1), c(0,1), ylab = "Survival", xlab = "Harvest",type="n",xaxt="n")
 ## the x- and y-axis, and an integer grid
 lines(x=c(0,1),y=c(0.8,0),lty=2,col=1)
@@ -468,3 +547,13 @@ points(x=c(0),y=yD$constp[1],pch=5)
 legend("bottomleft",legend=c("Ghana","Morogoro","Sao Tome","Principe","Dar Es Salaam"),
        pch=1:5,bty="n")
 dev.off()
+
+const_s_regression<-c(
+yG$constp[1],
+yM$constp[1],
+yS$constp[1],
+yP$constp[1],
+yD$constp[1])
+cres<-as.data.frame(const_s_regression)
+rownames(cres)<-c("Ghana","Morogoro","SaoTome","Principe","DarEsSalaam")
+write.csv(cres,"constSreg_data.csv")
