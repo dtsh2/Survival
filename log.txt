@@ -6,7 +6,6 @@ initial values loaded and chain initialized but another chain contains uninitial
 model is initialized
 model is already initialized
 model is updating
-<<<<<<< HEAD
 1000 updates took 4 s
 inference can not be made when sampler is in adaptive phase
 inference can not be made when sampler is in adaptive phase
@@ -22,7 +21,6 @@ model is updating
 1000 updates took 0 s
 model is updating
 9000 updates took 0 s
->>>>>>> origin/master
 CODA files written
 Summary statistics
 		mean	sd	val2.5pc	median	val97.5pc	sample

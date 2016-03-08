@@ -37,18 +37,11 @@ country = Ghana # Allpops/Bioko/Ghana/Principe/SaoTome/DarEsSalaam/Morogoro
 file_name = "Ghana"
 
 # read initial conditions
-<<<<<<< HEAD
-initC<-constant_init$Morogoro
-initS<-sen_init$Morogoro
-initM<-mat_init$Morogoro
-initB<-both_init$Morogoro
-initMS<-sen_mat_init$Morogoro
-=======
+
 initC<-constant_init$Ghana
 initS<-sen_init$Ghana
 initM<-mat_init$Ghana
 initB<-both_init$Ghana
->>>>>>> origin/master
 
 # data
 win.data<-list(data=country,Age=Age,nobs=length(country))
@@ -100,7 +93,6 @@ outB<-bugs(data=win.data,inits=inits,parameters.to.save=paramsB,
                       n.iter=ni,debug=T,DIC=T,working.directory=getwd())
 write.table(x=outB$summary,file=paste(file_name,'Both.csv',sep=""))
 
-<<<<<<< HEAD
 ###############################################################
 ## both
 
@@ -111,7 +103,7 @@ outMS<-bugs(data=win.data,inits=inits,parameters.to.save=paramsMS,
            model.file="allmodelMatSen.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
            n.iter=ni,debug=T,DIC=T,working.directory=getwd())
 write.table(x=outMS$summary,file=paste(file_name,'MatSen.csv',sep=""))
-=======
+
 ## const with declining population for sens analysis
 
 inits<-function()
@@ -121,7 +113,6 @@ outCr<-bugs(data=win.data,inits=inits,parameters.to.save=paramsC,
            n.iter=ni,debug=T,DIC=T,working.directory=getwd())
 
 write.table(x=outCr$summary,file=paste(file_name,'Constr.csv',sep=""))
->>>>>>> origin/master
 
 ##############################################################
 ## models and predictions for plotting
@@ -260,16 +251,10 @@ write.table(x,file=paste(file_name,'DIC.csv',sep=""))
 
 min=min(outC$DIC,outM$DIC,outS$DIC,outB$DIC,outMS$DIC)
 
-<<<<<<< HEAD
-tiff(paste(file_name,'dic.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
-barplot(c(outC$DIC-min,outM$DIC-min,outS$DIC-min,outB$DIC-min,outMS$DIC-min),
-        names.arg=c("Constant","Maturation","Senescence","Siler","Mat-Sen"))
-=======
 pdf(paste(file_name,'dic.pdf', sep=''),width=6,height=8)
 #tiff(paste(file_name,'dic.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
 barplot(c(outC$DIC-min,outM$DIC-min,outS$DIC-min,outB$DIC-min),
-        names.arg=c("Constant","Maturation","Senescence","Both"))
->>>>>>> origin/master
+        names.arg=c("Constant","Maturation","Senescence","Both","Mat-Sen"))
 dev.off()
 
 # pars distributions
