@@ -26,6 +26,7 @@ paramsC<-c("a","a2","data.var")
 paramsM<-c("a","a1","a2","b1","data.var")
 paramsS<-c("a","a3","a2","b3","data.var")
 paramsB<-c("a","a1","a2","a3","b1","b3","data.var")
+paramsMS<-c("a","a1","a3","b1","b3","data.var")
 
 # choose country
 country = Morogoro # Allpops/Bioko/Ghana/Principe/SaoTome/DarEsSalaam/Morogoro
@@ -36,6 +37,7 @@ initC<-constant_init$Morogoro
 initS<-sen_init$Morogoro
 initM<-mat_init$Morogoro
 initB<-both_init$Morogoro
+initMS<-sen_mat_init$Morogoro
 
 # data
 win.data<-list(data=country,Age=Age,nobs=length(country))
@@ -87,6 +89,17 @@ outB<-bugs(data=win.data,inits=inits,parameters.to.save=paramsB,
                       n.iter=ni,debug=T,DIC=T,working.directory=getwd())
 write.table(x=outB$summary,file=paste(file_name,'Both.csv',sep=""))
 
+###############################################################
+## both
+
+inits<-function()
+  initMS
+
+outMS<-bugs(data=win.data,inits=inits,parameters.to.save=paramsMS,
+           model.file="allmodelMatSen.txt",n.thin=nt,n.chains=nc,n.burnin=nb,
+           n.iter=ni,debug=T,DIC=T,working.directory=getwd())
+write.table(x=outMS$summary,file=paste(file_name,'MatSen.csv',sep=""))
+
 ##############################################################
 ## models and predictions for plotting
 ##############################################################
@@ -131,6 +144,15 @@ for (i in 1:length(Age)){
 LPBb<-apply(predictionsB,1,quantile,probs=0.025)
 UPBb<-apply(predictionsB,1,quantile,probs=0.975)
 
+## Mat _ Sen
+mat_sen<-outMS$mean$a*exp((-outMS$mean$a3/outMS$mean$b3)*(1-exp(outMS$mean$b3*dat$Age)))*exp((-outMS$mean$a1/outMS$mean$b1)*(1-exp(-outMS$mean$b1*dat$Age)))
+predictionsMS<-array(dim=c(length(Age),length(outMS$sims.list$a)))
+for (i in 1:length(Age)){
+  predictionsMS[i,]<-outMS$sims.list$a*exp((-outMS$sims.list$a3/outMS$sims.list$b3)*(1-exp(outMS$sims.list$b3*dat$Age[i])))*exp((-outMS$sims.list$a1/outMS$sims.list$b1)*(1-exp(-outMS$sims.list$b1*Age[i])))
+}
+LPBms<-apply(predictionsMS,1,quantile,probs=0.025)
+UPBms<-apply(predictionsMS,1,quantile,probs=0.975)
+
 ## plotting
 
 tiff(paste(file_name,'.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
@@ -156,23 +178,28 @@ points(0:15,LPBb,type="l",col="grey",lty=4)
 points(0:15,UPBb,type="l",col="grey",lty=4) # check 1 or 0 start
 polygon(c(rev(Age), Age), c(rev(LPBb),UPBb), col =  "#00000010", border = NA)
 
-legend("topright",legend=c("Constant","Maturation","Senescence","Both"),
-       lty=1:4,bty="n")
+lines(0:15,mat_sen,lty=5)
+points(0:15,LPBms,type="l",col="grey",lty=5)
+points(0:15,UPBms,type="l",col="grey",lty=5) # check 1 or 0 start
+polygon(c(rev(Age), Age), c(rev(LPBms),UPBms), col =  "#00000010", border = NA)
+
+legend("topright",legend=c("Constant","Maturation","Senescence","Siler",'Maturation-Senescence'),
+       lty=1:5,bty="n")
 points(Age,country,bg="black",pch=21)
 
 dev.off()
 
 ## DIC model selection
 
-x=cbind(outC$DIC,outM$DIC,outS$DIC,outB$DIC)
-colnames(x)<-c("C",'M',"S","B");rownames(x)<-"DIC"
+x=cbind(outC$DIC,outM$DIC,outS$DIC,outB$DIC,outMS$DIC)
+colnames(x)<-c("C",'M',"S","B","MS");rownames(x)<-"DIC"
 write.table(x,file=paste(file_name,'DIC.csv',sep=""))
 
-min=min(outC$DIC,outM$DIC,outS$DIC,outB$DIC)
+min=min(outC$DIC,outM$DIC,outS$DIC,outB$DIC,outMS$DIC)
 
 tiff(paste(file_name,'dic.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
-barplot(c(outC$DIC-min,outM$DIC-min,outS$DIC-min,outB$DIC-min),
-        names.arg=c("Constant","Maturation","Senescence","Both"))
+barplot(c(outC$DIC-min,outM$DIC-min,outS$DIC-min,outB$DIC-min,outMS$DIC-min),
+        names.arg=c("Constant","Maturation","Senescence","Siler","Mat-Sen"))
 dev.off()
 
 # pars distributions
@@ -227,6 +254,21 @@ hist(outB$sims.list$b1, main="b1",xlab="",col="grey")
 abline(v=outB$mean$b1,col="red")
 hist(outB$sims.list$b3, main="b3",xlab="",col="grey")
 abline(v=outB$mean$b3,col="red")
+dev.off()
+
+# mat - sen
+tiff(paste(file_name,'pars_mat_sen.tiff', sep=''),width=8,height=9,units='in',res=300, compression = "lzw")
+par(mfrow=c(3,2))
+hist(outMS$sims.list$a, main="a",xlab="",col="grey")
+abline(v=outMS$mean$a,col="red")
+hist(outMS$sims.list$a1, main="a1",xlab="",col="grey")
+abline(v=outMS$mean$a1,col="red")
+hist(outMS$sims.list$a3, main="a3",xlab="",col="grey")
+abline(v=outMS$mean$a3,col="red")
+hist(outMS$sims.list$b1, main="b1",xlab="",col="grey")
+abline(v=outMS$mean$b1,col="red")
+hist(outMS$sims.list$b3, main="b3",xlab="",col="grey")
+abline(v=outMS$mean$b3,col="red")
 dev.off()
 
 # plotting posterior vs priors
@@ -337,12 +379,33 @@ length(bothp)<-n
 length(bothP)<-n
 
 write.table(x=cbind(both,bothd,bothq,bothp,bothP),file=paste(file_name,'both_life_table.csv',sep=""))
+#####
+## mat_sen
+msd=mat_sen[1:15]-mat_sen[1:15+1]
+msq<-msd/mat_sen[1:15]
+msp<-1-msq
+msP<-numeric(length(msp))
+msP[1]<-1
+for (i in 2:length(msP)){
+  msP[i]<-msp[i-1]*msP[i-1]
+}
+
+n <- length(mat_sen)
+length(msd)<-n
+length(msq)<-n
+length(msp)<-n
+length(msP)<-n
+
+write.table(x=cbind(mat_sen,msd,msq,msp,msP),file=paste(file_name,'mat_sen_life_table.csv',sep=""))
+
+#####
 
 tiff(paste(file_name,'_ST.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
 plot(0:15,constp,ylim=c(0,1),type="l",xlab="Age",ylab="Survival",main=file_name)
 lines(0:15,senp,lty=2)
 lines(0:15,matp,lty=3)
 lines(0:15,bothp,lty=4)
+lines(0:15,msp,lty=5)
 dev.off()
 detach(dat)
 
