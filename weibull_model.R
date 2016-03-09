@@ -64,7 +64,7 @@ for (i in 1:length(Age)){
 LPBw<-apply(predictionsW,1,quantile,probs=0.025)
 UPBw<-apply(predictionsW,1,quantile,probs=0.975)
 
-plot(0:15,wei,ylab="Count",xlab="Age",type="l",ylim=c(0,max(country,na.rm=T)+20),main=file_name)
+plot(0:15,wei,ylab="Frequency",xlab="Age",type="l",ylim=c(0,max(country,na.rm=T)+20),main=file_name)
 ## plot CI
 points(0:15,LPBw,type="l",col="grey")
 points(0:15,UPBw,type="l",col="grey") # check 1 or 0 start

@@ -10,7 +10,7 @@ attach(dat)
 ## must detach at end of run - see end code
 
 pdf("age_data.pdf",height=6,width=8)
-barplot(as.matrix(dat[3:8]), main="", ylab="Count",xlab='Age', beside=TRUE, 
+barplot(as.matrix(dat[3:8]), main="", ylab="Frequency",xlab='Age', beside=TRUE, 
         col='grey')
 dev.off()
 #####################
@@ -184,7 +184,7 @@ UPBms<-apply(predictionsMS,1,quantile,probs=0.975)
 pdf(paste(file_name,'.pdf', sep=''),width=12, height=6)
 #tiff(paste(file_name,'.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
 
-plot(0:15,const,ylab="Count",xlab="Age",type="l",ylim=c(0,max(country,na.rm=T)+20),main=file_name)
+plot(0:15,const,ylab="Frequency",xlab="Age",type="l",ylim=c(0,max(country,na.rm=T)+20),main=file_name)
 ## plot CI
 points(0:15,LPBc,type="l",col="grey")
 points(0:15,UPBc,type="l",col="grey") # check 1 or 0 start
@@ -223,7 +223,7 @@ pdf(paste(file_name,'dec_stable.pdf', sep=''),width=12, height=6)
 
 #tiff(paste(file_name,'dec_stable.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
 
-plot(0:15,const,ylab="Count",xlab="Age",type="l",ylim=c(0,max(country,na.rm=T)+20),main=file_name)
+plot(0:15,const,ylab="Frequency",xlab="Age",type="l",ylim=c(0,max(country,na.rm=T)+20),main=file_name)
 ## plot CI
 points(0:15,LPBc,type="l",col="grey")
 points(0:15,UPBc,type="l",col="grey") # check 1 or 0 start
@@ -462,7 +462,7 @@ write.table(x=cbind(mat_sen,msd,msq,msp,msP),file=paste(file_name,'mat_sen_life_
 
 pdf(paste(file_name,'_ST.pdf', sep=''),width=6,height=6)
 #tiff(paste(file_name,'_ST.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
-plot(0:15,constp,ylim=c(0,1),type="l",xlab="Age",ylab="Survival",main=file_name)
+plot(0:15,constp,ylim=c(0,1),type="l",xlab="Age",ylab="Annual survival",main=file_name)
 lines(0:15,senp,lty=2)
 lines(0:15,matp,lty=3)
 lines(0:15,bothp,lty=4)
@@ -479,7 +479,7 @@ detach(dat)
 
 pdf("compensationVsN.pdf",width=6,height=6)
 #tiff("compensationVsN.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-plot(c(0,100000), c(0,1), ylab = "Survival", xlab = "Population size",type="n",xaxt="n")
+plot(c(0,100000), c(0,1), ylab = "Annual survival", xlab = "Population size",type="n",xaxt="n")
 ## the x- and y-axis, and an integer grid
 lines(x=c(0,100000),y=c(0.8,0.8),lty=2,col=1)
 lines(x=c(0,100000),y=c(0.8,0),lty=2,col=2)
@@ -512,7 +512,7 @@ dev.off()
 ## conpensatory - const till xs
 pdf("compensationVsHarvest.pdf",width=6,height=6)
 #tiff("compensationVsHarvest.tiff",width=8,height=8,units='in',res=300, compression = "lzw")
-plot(c(0,1), c(0,1), ylab = "Survival", xlab = "Harvest",type="n",xaxt="n")
+plot(c(0,1), c(0,1), ylab = "Annual survival", xlab = "Harvest",type="n",xaxt="n")
 ## the x- and y-axis, and an integer grid
 lines(x=c(0,1),y=c(0.8,0),lty=2,col=1)
 lines(x=c(0,0.5),y=c(0.8,0.8),lty=2,col=2)
