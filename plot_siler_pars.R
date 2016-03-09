@@ -1,6 +1,6 @@
 data_dar<-read.csv("DarEsSalaamboth.csv",sep='')
 data_mor<-read.csv("Morogoroboth.csv",sep='')
-data_gha<-read.csv("Ghanaboth.csv",sep='')
+data_gha<-read.csv("Accraboth.csv",sep='')
 data_sao<-read.csv("SaoTomeboth.csv",sep='')
 data_pri<-read.csv("Principeboth.csv",sep='')
 

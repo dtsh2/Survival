@@ -20,21 +20,21 @@ paramsW<-c("alpha_1","alpha_2","alpha_3",
            "data.var")
 
 # choose country
-country = Ghana # Allpops/Bioko/Ghana/Principe/SaoTome/DarEsSalaam/Morogoro
-file_name = "Ghana"
+country = Accra # Allpops/Bioko/Accra/Principe/SaoTome/DarEsSalaam/Morogoro
+file_name = "Accra"
 
 # read initial conditions
 
-names_w <-c('Ghana')
+names_w <-c('Accra')
 
 w_init<-as.data.frame(cbind(
-  # Ghana 
+  # Accra 
 list(alpha_1=rnorm(1,200),alpha_2=rnorm(1,0),alpha_3=0,
      data.sd=runif(1,0,100))))
 
 colnames(w_init)<-names_w
 
-initW<-w_init$Ghana
+initW<-w_init$Accra
 
 # data
 win.data<-list(data=country,Age=Age,nobs=length(country))

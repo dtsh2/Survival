@@ -33,15 +33,15 @@ paramsB<-c("a","a1","a2","a3","b1","b3","data.var")
 paramsMS<-c("a","a1","a3","b1","b3","data.var")
 
 # choose country
-country = Ghana # Allpops/Bioko/Ghana/Principe/SaoTome/DarEsSalaam/Morogoro
-file_name = "Ghana"
+country = Accra # Allpops/Bioko/Accra/Principe/SaoTome/DarEsSalaam/Morogoro
+file_name = "Accra"
 
 # read initial conditions
 
-initC<-constant_init$Ghana
-initS<-sen_init$Ghana
-initM<-mat_init$Ghana
-initB<-both_init$Ghana
+initC<-constant_init$Accra
+initS<-sen_init$Accra
+initM<-mat_init$Accra
+initB<-both_init$Accra
 
 # data
 win.data<-list(data=country,Age=Age,nobs=length(country))
@@ -490,7 +490,7 @@ legend("left",legend=c("Additive","Compensatory"),
 ## add data
 # y<-read.table(paste(file_name,"const_life_table.csv",sep=""))
 # OR
-yG <-read.table("Ghanaconst_life_table.csv")
+yG <-read.table("Accraconst_life_table.csv")
 yM <-read.table("Morogoroconst_life_table.csv")
 yS <-read.table("SaoTomeconst_life_table.csv")
 yP <-read.table("Principeconst_life_table.csv")
@@ -503,7 +503,7 @@ points(x=c(5000),y=yS$constp[1],pch=3)
 points(x=c(20000),y=yP$constp[1],pch=4)
 points(x=c(6000),y=yD$constp[1],pch=5)
 
-legend("bottomleft",legend=c("Ghana","Morogoro","Sao Tome","Principe","Dar Es Salaam"),
+legend("bottomleft",legend=c("Accra","Morogoro","Sao Tome","Principe","Dar Es Salaam"),
        pch=1:5,bty="n")
 dev.off()
 
@@ -529,7 +529,7 @@ points(x=c(1),y=yS$constp[1],pch=3)
 points(x=c(0),y=yP$constp[1],pch=4)
 points(x=c(0),y=yD$constp[1],pch=5)
 
-legend("bottomleft",legend=c("Ghana","Morogoro","Sao Tome","Principe","Dar Es Salaam"),
+legend("bottomleft",legend=c("Accra","Morogoro","Sao Tome","Principe","Dar Es Salaam"),
        pch=1:5,bty="n")
 dev.off()
 
@@ -540,5 +540,5 @@ yS$constp[1],
 yP$constp[1],
 yD$constp[1])
 cres<-as.data.frame(const_s_regression)
-rownames(cres)<-c("Ghana","Morogoro","SaoTome","Principe","DarEsSalaam")
+rownames(cres)<-c("Accra","Morogoro","SaoTome","Principe","DarEsSalaam")
 write.csv(cres,"constSreg_data.csv")
