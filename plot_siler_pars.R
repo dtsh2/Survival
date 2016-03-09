@@ -76,3 +76,43 @@ plot(my.dat$mean[seq(3,25,5)],pch=c(3,3,2,1,3),main="a3")
 plot(my.dat$mean[seq(4,25,5)],pch=c(3,3,2,1,3),main="b1")
 plot(my.dat$mean[seq(5,25,5)],pch=c(3,3,2,1,3),main="b3")
 
+##
+data_dar<-read.csv("DarEsSalaamConst.csv",sep='',header=T)
+data_mor<-read.csv("MorogoroConst.csv",sep='',header=T)
+data_gha<-read.csv("AccraConst.csv",sep='',header=T)
+data_sao<-read.csv("SaoTomeConst.csv",sep='',header=T)
+data_pri<-read.csv("PrincipeConst.csv",sep='',header=T)
+
+library(psych)
+
+lablist<-c("Dar Es Salaam","Morogoro","Accra","Sao Tome","Principe")
+
+my.dat <- data.frame(mean=c(data_dar[2,1],
+                            data_mor[2,1],
+                            data_gha[2,1],
+                            data_sao[2,1],
+                            data_pri[2,1]),
+                     up=c(data_dar[2,7],
+                          data_mor[2,7],
+                          data_gha[2,7],
+                          data_sao[2,7],
+                          data_pri[2,7]),
+                     low=c(data_dar[2,3],
+                           data_mor[2,3],
+                           data_gha[2,3],
+                           data_sao[2,3],
+                           data_pri[2,3]),
+                     prop.M=c(0.9076923,
+                              0.3928571,
+                              0.7356322,
+                              0.4605263,
+                              0.5294118))
+par(mar=c(7.1, 4.1, 4.1, 4.1))
+plot(y=1-my.dat$mean,x=my.dat$prop.M,ylim=c(min(my.dat)+0.4,max(my.dat)+0.1),ylab='estimated annual survival',xlab='proportion male',pch=rep(1:5,5),xlim=c(min(my.dat$prop.M)-0.1,max(my.dat$prop.M)+0.1))
+segments(x0=my.dat$prop.M,x1=my.dat$prop.M,y0=1-my.dat$up,y1=1-my.dat$low,lty=1:5)
+#abline(v=seq(1.5, 5, by=1),lty=2,col='grey')
+# text(seq(1,5, by=1), par("usr")[3] -0.05, labels = lablist, srt = 45, pos = 1, xpd = TRUE)
+#legend("top", inset=c(0,-0.05), horiz=T,legend=c("a1","a2","a3","b1","b3"), pch=1:5,lty=1:5, title="",bty='y',)
+#box()
+#dev.off()
+dev.copy2pdf(file="Effect of sex on survival_dtsh.pdf", width = 7, height = 7)

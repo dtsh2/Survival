@@ -235,7 +235,7 @@ points(0:15,LPBcr,type="l",col="red")
 points(0:15,UPBcr,type="l",col="red") # check 1 or 0 start
 polygon(c(rev(Age), Age), c(rev(LPBcr),UPBcr), col =  rgb(1,0,0,alpha=0.1) , border = NA)
 
-legend("topright",legend=c("Constant, r = 0","Constant, r = -0.05"),
+legend("topright",legend=c("Constant, r = 0","Constant, r = -0.1"),
        lty=1,bty="n",col=c("black",rgb(1,0,0,alpha=0.5)))
 points(Age,country,bg="black",pch=21)
 

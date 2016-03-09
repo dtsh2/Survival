@@ -9,7 +9,7 @@
     
     for (i in 1:nobs){
     data[i]~dnorm(mu[i],precision)
-    mu[i]<-a*exp(-0.05)*exp(-a2*Age[i])
+    mu[i]<-a*exp(-0.1)*exp(-a2*Age[i])
     }
     }
     
