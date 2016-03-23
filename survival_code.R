@@ -33,15 +33,16 @@ paramsB<-c("a","a1","a2","a3","b1","b3","data.var")
 paramsMS<-c("a","a1","a3","b1","b3","data.var")
 
 # choose country
-country = Accra # Allpops/Bioko/Accra/Principe/SaoTome/DarEsSalaam/Morogoro
-file_name = "Accra"
+country = Morogoro # Allpops/Bioko/Accra/Principe/SaoTome/DarEsSalaam/Morogoro
+file_name = "Morogoro"
 
 # read initial conditions
 
-initC<-constant_init$Accra
-initS<-sen_init$Accra
-initM<-mat_init$Accra
-initB<-both_init$Accra
+initC<-constant_init$Morogoro
+initS<-sen_init$Morogoro
+initM<-mat_init$Morogoro
+initB<-both_init$Morogoro
+initMS<-sen_mat_init$Morogoro
 
 # data
 win.data<-list(data=country,Age=Age,nobs=length(country))

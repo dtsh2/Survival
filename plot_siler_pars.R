@@ -106,13 +106,76 @@ my.dat <- data.frame(mean=c(data_dar[2,1],
                               0.3928571,
                               0.7356322,
                               0.4605263,
-                              0.5294118))
+                              0.5294118),
+                     pop.N=c(6000,
+                             10000,
+                             100000,
+                             5000,
+                             20000),
+                     hunt=c(0.1,
+                            0.095,
+                            0.5,
+                            1,
+                            0.09))
+
 par(mar=c(7.1, 4.1, 4.1, 4.1))
-plot(y=1-my.dat$mean,x=my.dat$prop.M,ylim=c(min(my.dat)+0.4,max(my.dat)+0.1),ylab='estimated annual survival',xlab='proportion male',pch=rep(1:5,5),xlim=c(min(my.dat$prop.M)-0.1,max(my.dat$prop.M)+0.1))
-segments(x0=my.dat$prop.M,x1=my.dat$prop.M,y0=1-my.dat$up,y1=1-my.dat$low,lty=1:5)
-#abline(v=seq(1.5, 5, by=1),lty=2,col='grey')
-# text(seq(1,5, by=1), par("usr")[3] -0.05, labels = lablist, srt = 45, pos = 1, xpd = TRUE)
-#legend("top", inset=c(0,-0.05), horiz=T,legend=c("a1","a2","a3","b1","b3"), pch=1:5,lty=1:5, title="",bty='y',)
-#box()
-#dev.off()
+plot(y=1-my.dat$mean,x=my.dat$prop.M,ylim=c(0,1),ylab='Estimated annual survival',xlab='Proportion male',
+     pch=16,xlim=c(0,1))
+segments(x0=my.dat$prop.M,x1=my.dat$prop.M,y0=1-my.dat$up,y1=1-my.dat$low,lty=1)
+
+#load data 
+constantS=read.csv('constSreg_data.csv',header = T)
+survivalvgender=read.csv('survivalvgender.csv',header = T)
+rownames(survivalvgender)=survivalvgender$Location
+# Add survival results
+survivalvgender[,5]=constantS[,2]
+
+modelM=lm(survival.est ~ prop.M ,data = survivalvgender)
+
+# Plot survival versus gender
+# par(pty="s")
+# plot(survivalvgender$prop.M,survivalvgender$survival.est,xlab="Proportion male",ylab="Survival rate",xlim=c(0,1),ylim=c(0,1),pch=20)
+#abline(modelM,lty=2,col='grey')
+text(0.2,0.67,"Morogoro",cex=0.8,pos=4)
+text(0.475,0.80,"Sao Tome",cex=0.8,pos=2)
+text(0.55,0.85,"Principe",cex=0.8,pos=3)
+text(0.74,0.92,"Accra",cex=0.8,pos=3)
+text(0.91,0.78,"Dar es",cex=0.8,pos=1)
+text(0.91,0.73,"Salaam",cex=0.8,pos=1)
 dev.copy2pdf(file="Effect of sex on survival_dtsh.pdf", width = 7, height = 7)
+
+###
+par(mar=c(7.1, 4.1, 4.1, 4.1))
+plot(y=1-my.dat$mean,x=my.dat$pop.N,ylim=c(0,1),ylab='Estimated annual survival',xlab='Colony size',
+     pch=16,xlim=c(0,max(my.dat$pop.N)))
+segments(x0=my.dat$pop.N,x1=my.dat$pop.N,y0=1-my.dat$up,y1=1-my.dat$low,lty=1)
+
+text(my.dat$pop.N[2],1-my.dat$mean[2]-0.1,"Morogoro",cex=0.8,pos=4)
+text(my.dat$pop.N[4]+1000,1-my.dat$mean[4]-0.1,"Sao",cex=0.8,pos=2)
+text(my.dat$pop.N[4]+1300,1-my.dat$mean[4]-0.14,"Tome",cex=0.8,pos=2)
+text(my.dat$pop.N[5]+5000,1-my.dat$mean[5]-0.1,"Principe",cex=0.8,pos=3)
+text(my.dat$pop.N[3]-1000,1-my.dat$mean[3]-0.15,"Accra",cex=0.8,pos=3)
+text(my.dat$pop.N[1],1-my.dat$mean[1]+0.18,"Dar es",cex=0.8,pos=1)
+text(my.dat$pop.N[1],1-my.dat$mean[1]+0.14,"Salaam",cex=0.8,pos=1)
+dev.copy2pdf(file="Effect of colony size on survival_dtsh.pdf", width = 7, height = 7)
+
+##
+###
+par(mar=c(7.1, 4.1, 4.1, 4.1))
+plot(y=1-my.dat$mean,x=my.dat$hunt,ylim=c(0,1),ylab='Estimated annual survival',xlab='Harvest',
+     pch=16,xlim=c(0,1))
+segments(x0=my.dat$hunt,x1=my.dat$hunt,y0=1-my.dat$up,y1=1-my.dat$low,lty=1)
+
+text(my.dat$hunt[2]+0.02,1-my.dat$mean[2]-0.05,"Morogoro",cex=0.8,pos=4)
+text(my.dat$hunt[4],1-my.dat$mean[4]-0.05,"Sao Tome",cex=0.8,pos=2)
+text(my.dat$hunt[5]-0.06,1-my.dat$mean[5]-0,"Principe",cex=0.8,pos=3)
+text(my.dat$hunt[3],1-my.dat$mean[3]-0.15,"Accra",cex=0.8,pos=3)
+text(my.dat$hunt[1]+0.08,1-my.dat$mean[1]+0.1,"Dar es",cex=0.8,pos=1)
+text(my.dat$hunt[1]+0.08,1-my.dat$mean[1]+0.06,"Salaam",cex=0.8,pos=1)
+dev.copy2pdf(file="Effect of hunting on survival_dtsh.pdf", width = 7, height = 7)
+
+##
+life_ex<--1/log(1-my.dat$mean)
+mean(life_ex)
+up95<-mean(life_ex)+1.96*sd(life_ex)
+lo95<-mean(life_ex)-1.96*sd(life_ex)
