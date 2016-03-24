@@ -117,7 +117,7 @@ my.dat <- data.frame(mean=c(data_dar[2,1],
                             0.5,
                             1,
                             0.09))
-
+rownames(my.dat)<-lablist
 par(mar=c(7.1, 4.1, 4.1, 4.1))
 plot(y=1-my.dat$mean,x=my.dat$prop.M,ylim=c(0,1),ylab='Estimated annual survival',xlab='Proportion male',
      pch=16,xlim=c(0,1))
@@ -176,6 +176,33 @@ dev.copy2pdf(file="Effect of hunting on survival_dtsh.pdf", width = 7, height = 
 
 ##
 life_ex<--1/log(1-my.dat$mean)
+life_ex
+up95<-life_ex+1.96*sd(life_ex)
+lo95<-life_ex-1.96*sd(life_ex)
+res_life_exp<-cbind(life_ex,up95,lo95)
+rownames(res_life_exp)<-lablist
+write.csv(res_life_exp,file="res_life_exp.csv")
+
 mean(life_ex)
 up95<-mean(life_ex)+1.96*sd(life_ex)
 lo95<-mean(life_ex)-1.96*sd(life_ex)
+
+write.csv(my.dat,file="my_data_res.csv")
+
+dic_dar<-read.csv("DarEsSalaamDIC.csv",sep='',header=T)
+dic_mor<-read.csv("MorogoroDIC.csv",sep='',header=T)
+dic_acc<-read.csv("AccraDIC.csv",sep='',header=T)
+dic_sao<-read.csv("SaoTomeDIC.csv",sep='',header=T)
+dic_pri<-read.csv("PrincipeDIC.csv",sep='',header=T)
+
+
+lablist<-c("Dar Es Salaam","Morogoro","Accra","Sao Tome","Principe")
+
+my.dic <- data.frame(rbind(dic_dar,
+                     dic_mor,
+                     dic_acc,
+                     dic_sao,
+                     dic_pri))
+rownames(my.dic)<-lablist
+t(my.dic)
+write.csv(t(my.dic),file="my_dic_res.csv")
