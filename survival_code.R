@@ -182,7 +182,7 @@ UPBms<-apply(predictionsMS,1,quantile,probs=0.975)
 
 ## plotting
 
-pdf(paste(file_name,'.pdf', sep=''),width=12, height=6)
+pdf(paste(file_name,'.pdf', sep=''),width=6, height=6)
 #tiff(paste(file_name,'.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
 
 plot(0:15,const,ylab="Frequency",xlab="Age",type="l",ylim=c(0,max(country,na.rm=T)+20),main=file_name)
@@ -220,7 +220,7 @@ points(Age,country,bg="black",pch=21)
 dev.off()
 
 ## r vs constant pop size
-pdf(paste(file_name,'dec_stable.pdf', sep=''),width=12, height=6)
+pdf(paste(file_name,'dec_stable.pdf', sep=''),width=6, height=6)
 
 #tiff(paste(file_name,'dec_stable.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
 
@@ -252,10 +252,11 @@ write.table(x,file=paste(file_name,'DIC.csv',sep=""))
 
 min=min(outC$DIC,outM$DIC,outS$DIC,outB$DIC,outMS$DIC)
 
-pdf(paste(file_name,'dic.pdf', sep=''),width=6,height=8)
+pdf(paste(file_name,'dic.pdf', sep=''),width=5,height=6)
+par(mar=c(6,4,4,2)+0.1)
 #tiff(paste(file_name,'dic.tiff', sep=''),width=8,height=8,units='in',res=300, compression = "lzw")
-barplot(c(outC$DIC-min,outM$DIC-min,outS$DIC-min,outB$DIC-min),
-        names.arg=c("Constant","Maturation","Senescence","Both","Mat-Sen"))
+barplot(c(outC$DIC-min,outM$DIC-min,outS$DIC-min,outB$DIC-min,outMS$DIC-min),
+        names.arg=c("Constant","Maturation","Senescence","Siler","Mat-Sen"),las=2)
 dev.off()
 
 # pars distributions
@@ -317,7 +318,8 @@ abline(v=outB$mean$b3,col="red")
 dev.off()
 
 # mat - sen
-tiff(paste(file_name,'pars_mat_sen.tiff', sep=''),width=8,height=9,units='in',res=300, compression = "lzw")
+pdf(paste(file_name,'pars_mat_sen.pdf', sep=''),width=12,height=8)
+#tiff(paste(file_name,'pars_mat_sen.tiff', sep=''),width=8,height=9,units='in',res=300, compression = "lzw")
 par(mfrow=c(3,2))
 hist(outMS$sims.list$a, main="a",xlab="",col="grey")
 abline(v=outMS$mean$a,col="red")
