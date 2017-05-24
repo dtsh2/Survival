@@ -147,7 +147,9 @@ dev.copy2pdf(file="Effect of sex on survival_dtsh.pdf", width = 7, height = 7)
 ###
 par(mar=c(7.1, 4.1, 4.1, 4.1))
 plot(y=1-my.dat$mean,x=my.dat$pop.N,ylim=c(0,1),ylab='Estimated annual survival',xlab='Colony size',
-     pch=16,xlim=c(0,max(my.dat$pop.N)))
+     pch=16,xlim=c(0,max(my.dat$pop.N)),xaxt="n")
+marks <- c(0,20000,40000,60000,80000,100000)
+axis(1,at=marks,labels=format(marks,scientific=FALSE))
 segments(x0=my.dat$pop.N,x1=my.dat$pop.N,y0=1-my.dat$up,y1=1-my.dat$low,lty=1)
 
 text(my.dat$pop.N[2],1-my.dat$mean[2]-0.1,"Morogoro",cex=0.8,pos=4)
